@@ -1,0 +1,67 @@
+object:
+  document: 月球是距地球最近的天体，平均距离约为38.4万千米。
+  labels: # 标注有多个成组, 每个类型的成组只能有一个, 成组要按照类型排序: 问题 < 回答
+    - labelGroups: # 成组数组
+        # ++ 成组g1
+        - type: 问题
+          id: g1
+          entities: # 实体数组
+            # +++ 实体e1
+            - id: e1
+              source: document
+              sentences:
+                - text: 月球是距地球最近的天体
+                  span: [ 0, 20 ]
+                - text: 平均距离
+                  span: [ 22, 26 ]
+            # --- 实体e1
+            # +++ 实体e2
+            - id: e2
+              sentences:
+                - text: 月球是距地球最近的天体
+                  span: [ 0, 20 ]
+                - text: 平均距离
+                  span: [ 22, 26 ]
+            # --- 实体e2
+            # +++ 实体ep2
+            - id: e2
+              source: person
+              sentences:
+                - text: 月球是距地球最近的天体
+                  span: [ 0, 20 ]
+                - text: 平均距离
+                  span: [ 22, 26 ]
+            # --- 实体ep2
+        # -- 成组g1
+        # ++ 成组g2
+        - type: 回答
+          id: g2
+          entities: # 实体数组
+            # +++ 实体e1
+            - id: e3
+              sentences:
+                - text: 月球是距地球最近的天体
+                  span: [ 0, 20 ]
+                - text: 平均距离
+                  span: [ 22, 26 ]
+            # --- 实体e1
+            # +++ 实体e2
+            - id: e4
+              sentences:
+                - text: 月球是距地球最近的天体
+                  span: [ 0, 20 ]
+                - text: 平均距离
+                  span: [ 22, 26 ]
+            # --- 实体e2
+        # ++ 成组g2
+      resultGroups: # 结果成组数组, 和labelGroups一摸一样的结构, 扩充字段
+        - type: 问题
+          id: g3
+          entities:
+            - id: e5
+              source: gpt
+              sentences:
+                - text: "如果去月球" # gpt给出的结果
+              validation:
+                passed: false
+                comment: ""

@@ -1,0 +1,24 @@
+run:
+  skip-files:
+    - ".*\\_mock\\.go$"
+    - "app/admin/*"
+    - "app/jobs/*"
+    - "app/other/*"
+linters:
+  disable-all: true
+  enable:
+    - unused
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - bodyclose
+    - exportloopref
+    - whitespace
+    - unparam
+    - unconvert
+    - sqlclosecheck
+    - noctx

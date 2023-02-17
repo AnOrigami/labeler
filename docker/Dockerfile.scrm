@@ -1,0 +1,7 @@
+FROM harbor.blauwelle.com/deepies/go-runtime:v1.0.0
+
+COPY build/go-admin /usr/local/bin
+
+WORKDIR /labeler2
+
+CMD ["/usr/local/bin/go-admin"]
