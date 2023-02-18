@@ -21,6 +21,7 @@ type Extend struct {
 	CacheSentence    CacheSentenceConfig    `yaml:"cachesentence"`
 	WeComInteractive WeComInteractiveConfig `yaml:"wecominteractive"`
 	MinIO            MinIOConfig            `yaml:"minio"`
+	Mongodb          MongodbConfig          `yaml:"mongodb"`
 }
 
 type AMap struct {
@@ -71,4 +72,9 @@ type MinIOConfig struct {
 	Key              string `yaml:"key"`
 	Secret           string `yaml:"secret"`
 	ExportFileBucket string `yaml:"exportfilebucket"`
+}
+
+type MongodbConfig struct {
+	DSN       string `yaml:"dsn"`
+	LabelerDB string `yaml:"labelerdb"`
 }
