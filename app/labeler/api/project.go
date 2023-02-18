@@ -14,7 +14,7 @@ func init() {
 
 func projectAuthRouter() RouterCheckRole {
 	return func(g *gin.RouterGroup, api *LabelerAPI, authMiddleware *jwt.GinJWTMiddleware) {
-		g.POST("/api/v1/p/", api.CreateProject())
+		g.POST("/api/v1/labeler/p/", api.CreateProject())
 	}
 }
 
