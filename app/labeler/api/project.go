@@ -1,11 +1,11 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
+	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
 	"go-admin/app/labeler/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go-admin/common/log"
 )
 
 func init() {
@@ -21,8 +21,19 @@ func projectAuthRouter() RouterCheckRole {
 func (api *LabelerAPI) CreateProject() GinHandler {
 	return func(c *gin.Context) {
 		var project model.Project
-		fmt.Println(c.ShouldBindJSON(&project))
-		fmt.Println(primitive.NewObjectID().Hex())
-		api.LabelerService.CreateProject(c.Request.Context(), project)
+		if err := c.ShouldBindJSON(&project); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+
+		resp, err := api.LabelerService.CreateProject(c.Request.Context(), project)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+
+		response.OK(c, resp, "")
 	}
 }

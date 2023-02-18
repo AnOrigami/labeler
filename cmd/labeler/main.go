@@ -90,6 +90,7 @@ func run() error {
 			Use(common.Sentinel()).
 			Use(common.RequestId(pkg.TrafficKey)).
 			Use(sdkapi.SetRequestLogger)
+		common.InitMiddleware(r)
 		api.InitRouter(r, labelerAPI, authMiddleware)
 		return nil
 	})
