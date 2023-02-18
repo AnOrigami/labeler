@@ -5,6 +5,8 @@ import (
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"go-admin/app/labeler/service"
 	"go-admin/common/actions"
+	"go-admin/common/log"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type (
@@ -38,4 +40,20 @@ func InitRouter(r *gin.Engine, api *LabelerAPI, authMiddleware *jwtauth.GinJWTMi
 	for _, f := range routerCheckRole {
 		f(auth, api, authMiddleware)
 	}
+}
+
+func QueryObjectID(c *gin.Context) (primitive.ObjectID, error) {
+	var req struct {
+		ID string `form:"id"`
+	}
+	if err := c.ShouldBindQuery(&req); err != nil {
+		log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+		return primitive.NilObjectID, err
+	}
+	oid, err := primitive.ObjectIDFromHex(req.ID)
+	if err != nil {
+		log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+		return primitive.NilObjectID, err
+	}
+	return oid, nil
 }
