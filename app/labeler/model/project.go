@@ -1,8 +1,10 @@
 package model
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Project struct {
-	ID       string
-	Name     string
-	FolderID string
-	Schema   Schema
+	ID       primitive.ObjectID `bson:"_id" json:"id"`
+	Name     string             `bson:"name" json:"name"`
+	FolderID primitive.ObjectID `bson:"folderId" json:"folderId"`
+	Schema   Schema             `bson:"schema" json:"schema"`
 }

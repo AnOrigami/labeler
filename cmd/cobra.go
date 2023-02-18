@@ -6,6 +6,7 @@ import (
 	"github.com/go-admin-team/go-admin-core/sdk/pkg"
 	"go-admin/cmd/admin"
 	"go-admin/cmd/app"
+	"go-admin/cmd/labeler"
 	"go-admin/common/global"
 	"os"
 
@@ -45,6 +46,7 @@ func tip() {
 func init() {
 	rootCmd.AddCommand(admin.StartCmd)
 	rootCmd.AddCommand(server.StartCmd)
+	rootCmd.AddCommand(labeler.StartCmd)
 	rootCmd.AddCommand(migrate.StartCmd)
 	rootCmd.AddCommand(version.StartCmd)
 	rootCmd.AddCommand(config.StartCmd)

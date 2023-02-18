@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"go-admin/app/labeler/model"
 	ext "go-admin/config"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -16,4 +18,9 @@ func NewLabelerService(mongodbClient *mongo.Client) *LabelerService {
 		MongodbClient: mongodbClient,
 		MongodbDB:     mongodbClient.Database(cfg.LabelerDB),
 	}
+}
+
+func (svc *LabelerService) CreateProject(ctx context.Context, req model.Project) {
+	result, err := svc.MongodbDB.Collection("project").InsertOne(ctx, req)
+	_, _ = result, err
 }
