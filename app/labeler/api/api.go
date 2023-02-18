@@ -7,6 +7,8 @@ import (
 	"go-admin/common/actions"
 	"go-admin/common/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"io"
+	"mime/multipart"
 )
 
 type (
@@ -56,4 +58,17 @@ func QueryObjectID(c *gin.Context) (primitive.ObjectID, error) {
 		return primitive.NilObjectID, err
 	}
 	return oid, nil
+}
+
+func ReadFileHeader(fh *multipart.FileHeader) (string, error) {
+	f, err := fh.Open()
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
