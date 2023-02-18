@@ -16,6 +16,7 @@ func init() {
 func taskAuthRouter() RouterCheckRole {
 	return func(g *gin.RouterGroup, api *LabelerAPI, authMiddleware *jwt.GinJWTMiddleware) {
 		g.POST("/api/v1/labeler/t/upload", api.UploadTask())
+		g.PUT("/api/v1/labeler/t/", api.UpdateTask())
 	}
 }
 
@@ -58,5 +59,28 @@ func (api *LabelerAPI) UploadTask() GinHandler {
 			return
 		}
 		response.OK(c, resp, "")
+	}
+}
+
+func (api *LabelerAPI) UpdateTask() GinHandler {
+	return func(c *gin.Context) {
+		var req model.Task
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ID.IsZero() {
+			response.Error(c, 500, nil, "id不能为空")
+			return
+		}
+
+		resp, err := api.LabelerService.UpdateTask(c, req)
+		if err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+
+		response.OK(c, resp, "更新成功")
 	}
 }

@@ -35,7 +35,7 @@ func (api *LabelerAPI) CreateFolder() GinHandler {
 			return
 		}
 
-		resp, err := api.LabelerService.CreateFolder(c, req)
+		resp, err := api.LabelerService.CreateFolder(c.Request.Context(), req)
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return
@@ -62,7 +62,7 @@ func (api *LabelerAPI) UpdateFolder() GinHandler {
 			return
 		}
 
-		resp, err := api.LabelerService.UpdateFolder(c, req)
+		resp, err := api.LabelerService.UpdateFolder(c.Request.Context(), req)
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return
@@ -85,7 +85,7 @@ func (api *LabelerAPI) DeleteFolder() GinHandler {
 			response.Error(c, 500, err, "参数异常")
 		}
 
-		if err := api.LabelerService.DeleteFolder(c, objectID); err != nil {
+		if err := api.LabelerService.DeleteFolder(c.Request.Context(), objectID); err != nil {
 			response.Error(c, 500, err, "")
 			return
 		}
@@ -96,7 +96,7 @@ func (api *LabelerAPI) DeleteFolder() GinHandler {
 
 func (api *LabelerAPI) GetFolders() GinHandler {
 	return func(c *gin.Context) {
-		res, err := api.LabelerService.GetFolders(c)
+		res, err := api.LabelerService.GetFolders(c.Request.Context())
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return

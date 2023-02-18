@@ -62,7 +62,7 @@ func (api *LabelerAPI) UpdateSchema() GinHandler {
 			return
 		}
 
-		resp, err := api.LabelerService.UpdateSchema(c, req)
+		resp, err := api.LabelerService.UpdateSchema(c.Request.Context(), req)
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return
@@ -85,7 +85,7 @@ func (api *LabelerAPI) DeleteSchema() GinHandler {
 			response.Error(c, 500, err, "参数异常")
 		}
 
-		if err := api.LabelerService.DeleteSchema(c, objectID); err != nil {
+		if err := api.LabelerService.DeleteSchema(c.Request.Context(), objectID); err != nil {
 			response.Error(c, 500, err, "")
 			return
 		}
@@ -96,7 +96,7 @@ func (api *LabelerAPI) DeleteSchema() GinHandler {
 
 func (api *LabelerAPI) GetSchema() GinHandler {
 	return func(c *gin.Context) {
-		res, err := api.LabelerService.GetSchema(c)
+		res, err := api.LabelerService.GetSchema(c.Request.Context())
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return
