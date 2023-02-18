@@ -10,6 +10,7 @@ type LabelerService struct {
 	MongodbClient     *mongo.Client
 	MongodbDB         *mongo.Database
 	CollectionProject *mongo.Collection
+	CollectionFolder  *mongo.Collection
 }
 
 func NewLabelerService(mongodbClient *mongo.Client) *LabelerService {
@@ -19,6 +20,7 @@ func NewLabelerService(mongodbClient *mongo.Client) *LabelerService {
 		MongodbDB:     mongodbClient.Database(cfg.LabelerDB),
 	}
 	svc.CollectionProject = svc.MongodbDB.Collection("project")
+	svc.CollectionFolder = svc.MongodbDB.Collection("folder")
 	return svc
 }
 

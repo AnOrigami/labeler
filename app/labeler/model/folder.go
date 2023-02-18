@@ -1,7 +1,10 @@
 package model
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Folder struct {
-	ID       string
-	Name     string
-	Children []Folder
+	ID       primitive.ObjectID `bson:"_id" json:"id"`
+	Name     string             `bson:"name" json:"name"`
+	ParentID string             `bson:"parentID" json:"parentID"`
+	Children []*Folder          `bson:"-" json:"children,omitempty"`
 }
