@@ -1,10 +1,12 @@
 package model
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Schema struct {
-	ID         string      `bson:"_id" json:"id"`
-	Name       string      `bson:"name" json:"name"`
-	RuleGroups []RuleGroup `bson:"ruleGroups" json:"ruleGroups"`
-	Model      Model       `bson:"model" json:"model"`
+	ID         primitive.ObjectID `bson:"_id" json:"id"`
+	Name       string             `bson:"name" json:"name"`
+	RuleGroups []RuleGroup        `bson:"ruleGroups" json:"ruleGroups"`
+	Model      Model              `bson:"model" json:"model"`
 }
 
 type RuleGroup struct {
