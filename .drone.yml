@@ -21,7 +21,7 @@ steps:
         - tag
     settings:
       dockerfile: docker/Dockerfile.scrm
-      repo: harbor.blauwelle.com/deepies/labeler2
+      repo: harbor.blauwelle.com/deepies/labeler
       registry: harbor.blauwelle.com
       username:
         from_secret: harbor_username
