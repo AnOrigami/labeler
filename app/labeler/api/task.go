@@ -5,6 +5,8 @@ import (
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
 	"go-admin/app/labeler/model"
+	"go-admin/app/labeler/service"
+	"go-admin/common/actions"
 	"go-admin/common/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -17,6 +19,8 @@ func taskAuthRouter() RouterCheckRole {
 	return func(g *gin.RouterGroup, api *LabelerAPI, authMiddleware *jwt.GinJWTMiddleware) {
 		g.POST("/api/v1/labeler/t/upload", api.UploadTask())
 		g.PUT("/api/v1/labeler/t/", api.UpdateTask())
+		g.POST("/api/v1/labeler/t/search", api.SearchTask())
+		g.GET("/api/v1/labeler/t/", api.GetTask())
 	}
 }
 
@@ -82,5 +86,44 @@ func (api *LabelerAPI) UpdateTask() GinHandler {
 		}
 
 		response.OK(c, resp, "更新成功")
+	}
+}
+
+func (api *LabelerAPI) SearchTask() GinHandler {
+	return func(c *gin.Context) {
+		var req service.SearchTaskReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		p := actions.GetPermissionFromContext(c)
+		req.UserID = p.UserId
+		req.DataScope = p.DataScope
+
+		resp, total, err := api.LabelerService.SearchTask(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.PageOK(c, resp, total, req.PageIndex, req.PageSize, "查询成功")
+	}
+}
+
+func (api *LabelerAPI) GetTask() GinHandler {
+	return func(c *gin.Context) {
+		oid, err := QueryObjectID(c)
+		if err != nil {
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		resp, err := api.LabelerService.GetTask(c.Request.Context(), oid)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "获取成功")
 	}
 }

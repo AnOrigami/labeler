@@ -1,10 +1,13 @@
 package service
 
 import (
+	"errors"
 	ext "go-admin/config"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var ErrNoDoc = errors.New("文档不存在")
 
 type LabelerService struct {
 	MongodbClient     *mongo.Client

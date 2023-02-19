@@ -10,18 +10,28 @@ const (
 )
 
 type Task struct {
-	ID        primitive.ObjectID `bson:"_id" json:"id"`
-	ProjectID primitive.ObjectID `bson:"projectId" json:"projectId"`
-	Name      string             `bson:"name" json:"name"`
-	Status    string             `bson:"status" json:"status"`
-	Document  string             `bson:"document" json:"document"`
-	Contents  []Content          `bson:"contents" json:"contents"`
+	ID          primitive.ObjectID `bson:"_id" json:"id"`
+	ProjectID   primitive.ObjectID `bson:"projectId" json:"projectId"`
+	Name        string             `bson:"name" json:"name"`
+	Status      string             `bson:"status" json:"status"`
+	Document    string             `bson:"document" json:"document"`
+	Permissions Permissions        `bson:"permissions" json:"permissions"`
+	Contents    []Content          `bson:"contents" json:"contents"`
 }
 
 type Content struct {
 	ID      string  `bson:"id" json:"id"`
 	Raw     Group   `bson:"raw" json:"raw"`
 	Results []Group `bson:"results" json:"results"`
+}
+
+type Permissions struct {
+	Labeler *Person `bson:"labeler,omitempty" json:"labeler"`
+	Checker *Person `bson:"checker,omitempty" json:"checker"`
+}
+
+type Person struct {
+	ID string `bson:"id" json:"id"`
 }
 
 type Group struct {
