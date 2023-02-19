@@ -26,18 +26,20 @@ func (svc *LabelerService) GetFolders(ctx context.Context) ([]*model.Folder, err
 
 func FolderTree(folders []*model.Folder) []*model.Folder {
 	var tree []*model.Folder
-	foldersMap := make(map[string]*model.Folder, len(folders))
+	foldersMap := make(map[primitive.ObjectID]*model.Folder, len(folders))
 	for _, f := range folders {
-		if f.ParentID.IsZero() {
+		if f.ParentID == nil {
 			tree = append(tree, f)
 		}
 
-		foldersMap[f.ID.Hex()] = f
+		foldersMap[f.ID] = f
 	}
 
 	for _, f := range folders {
-		if parent, exists := foldersMap[f.ParentID.Hex()]; exists {
-			parent.Children = append(parent.Children, f)
+		if f.ParentID != nil {
+			if parent, exists := foldersMap[*f.ParentID]; exists {
+				parent.Children = append(parent.Children, f)
+			}
 		}
 	}
 
