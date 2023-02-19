@@ -116,3 +116,72 @@ func (svc *LabelerService) GetTask(ctx context.Context, id primitive.ObjectID) (
 
 	return task, nil
 }
+
+type AllocateTasksReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Number    int64              `json:"number"`
+	Persons   []string           `json:"persons"`
+}
+
+func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksReq) error {
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"permissions.labeler": bson.M{
+			"$exists": false,
+		},
+	}
+	count, err := svc.CollectionTask.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return err
+	}
+
+	if count > req.Number {
+		count = req.Number
+	}
+
+	for i, id := range req.Persons {
+		opts := options.Find().SetProjection(bson.D{{"_id", 1}})
+		if i < len(req.Persons)-1 {
+			opts.SetLimit(count / int64(len(req.Persons)))
+		} else {
+			opts.SetLimit(count/int64(len(req.Persons)) + count%int64(len(req.Persons)))
+		}
+
+		result, err := svc.CollectionTask.Find(ctx, filter, opts)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return err
+		}
+
+		var tasks []model.Task
+		if err = result.All(ctx, &tasks); err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return err
+		}
+
+		var idArray bson.A
+		for _, t := range tasks {
+			idArray = append(idArray, t.ID)
+		}
+
+		ft := bson.M{
+			"_id": bson.M{
+				"$in": idArray,
+			},
+		}
+		update := bson.M{
+			"$set": bson.M{
+				"permissions.labeler": model.Person{ID: fmt.Sprint(id)},
+			},
+		}
+		r, err := svc.CollectionTask.UpdateMany(ctx, ft, update)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return err
+		}
+		fmt.Printf("id:%s, update:%v", id, r)
+	}
+
+	return nil
+}

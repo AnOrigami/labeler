@@ -21,6 +21,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.PUT("/api/v1/labeler/t/", api.UpdateTask())
 		g.POST("/api/v1/labeler/t/search", api.SearchTask())
 		g.GET("/api/v1/labeler/t/", api.GetTask())
+		g.POST("/api/v1/labeler/t/allocate", api.AllocateTasks())
 	}
 }
 
@@ -125,5 +126,27 @@ func (api *LabelerAPI) GetTask() GinHandler {
 			return
 		}
 		response.OK(c, resp, "获取成功")
+	}
+}
+
+func (api *LabelerAPI) AllocateTasks() GinHandler {
+	return func(c *gin.Context) {
+		var req service.AllocateTasksReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ProjectID.IsZero() {
+			response.Error(c, 500, nil, "项目id不能为空")
+			return
+		}
+
+		if err := api.LabelerService.AllocateTasks(c.Request.Context(), req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, nil, "分配成功")
 	}
 }

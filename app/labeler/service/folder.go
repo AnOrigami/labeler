@@ -2,15 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"go-admin/app/labeler/model"
 	"go-admin/common/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
-var (
-	ErrDatabase = errors.New("服务器出问题了")
 )
 
 func (svc *LabelerService) GetFolders(ctx context.Context) ([]*model.Folder, error) {
@@ -33,7 +28,7 @@ func FolderTree(folders []*model.Folder) []*model.Folder {
 	var tree []*model.Folder
 	foldersMap := make(map[string]*model.Folder, len(folders))
 	for _, f := range folders {
-		if f.ParentID == "" {
+		if f.ParentID.IsZero() {
 			tree = append(tree, f)
 		}
 
@@ -41,7 +36,7 @@ func FolderTree(folders []*model.Folder) []*model.Folder {
 	}
 
 	for _, f := range folders {
-		if parent, exists := foldersMap[f.ParentID]; exists {
+		if parent, exists := foldersMap[f.ParentID.Hex()]; exists {
 			parent.Children = append(parent.Children, f)
 		}
 	}

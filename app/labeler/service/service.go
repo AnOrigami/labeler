@@ -7,7 +7,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ErrNoDoc = errors.New("文档不存在")
+var (
+	ErrDatabase = errors.New("服务器出问题了")
+	ErrNoDoc    = errors.New("文档不存在")
+)
 
 type LabelerService struct {
 	MongodbClient     *mongo.Client
