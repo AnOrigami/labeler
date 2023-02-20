@@ -21,8 +21,8 @@ type Task struct {
 
 type Content struct {
 	ID      string  `bson:"id" json:"id"`
-	Raw     Group   `bson:"raw" json:"raw"`
-	Results []Group `bson:"results" json:"results"`
+	Raw     Tuple   `bson:"raw" json:"raw"`
+	Results []Tuple `bson:"results" json:"results"`
 }
 
 type Permissions struct {
@@ -32,6 +32,10 @@ type Permissions struct {
 
 type Person struct {
 	ID string `bson:"id" json:"id"`
+}
+
+type Tuple struct {
+	Groups []Group `bson:"groups" json:"groups"`
 }
 
 type Group struct {
