@@ -31,6 +31,7 @@ func PermissionAction() gin.HandlerFunc {
 			log.Error(err)
 			return
 		}
+		db = db.WithContext(c.Request.Context())
 
 		msgID := pkg.GenerateMsgIDFromContext(c)
 		var p = new(DataPermission)
