@@ -96,12 +96,12 @@ func run() error {
 		r.Use(func(c *gin.Context) {
 			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), scrm.GinContextKey, c))
 		})
-		r.Use(otelgin.Middleware(ServiceName))
 		r.
 			Use(common.Sentinel()).
 			Use(common.RequestId(pkg.TrafficKey)).
 			Use(sdkapi.SetRequestLogger)
 		common.InitMiddleware(r)
+		r.Use(otelgin.Middleware(ServiceName))
 		api.InitRouter(r, labelerAPI, authMiddleware)
 		return nil
 	})
