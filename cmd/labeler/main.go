@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-admin-team/go-admin-core/config/source/file"
+	"github.com/go-admin-team/go-admin-core/sdk"
 	sdkapi "github.com/go-admin-team/go-admin-core/sdk/api"
 	"github.com/go-admin-team/go-admin-core/sdk/config"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg"
 	"github.com/spf13/cobra"
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"go-admin/app/labeler/api"
 	service2 "go-admin/app/labeler/service"
 	"go-admin/app/scrm"
@@ -20,6 +22,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"net/http"
 	"os"
 	"os/signal"
@@ -60,12 +63,20 @@ func run() error {
 		return nil
 	})
 
+	_ = log.WithTracer(startingCtx, PackageName, "初始化GORM", func(ctx context.Context) error {
+		scrm.GormDB = sdk.Runtime.GetDbByKey("")
+		if err := scrm.GormDB.Use(otelgorm.NewPlugin()); err != nil {
+			scrm.Logger().WithContext(ctx).Fatal(err)
+		}
+		return nil
+	})
+
 	var mongodbClient *mongo.Client
 	_ = log.WithTracer(startingCtx, PackageName, "初始化MongoDB", func(ctx context.Context) error {
 		cfg := ext.ExtConfig.Mongodb
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.DSN))
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.DSN).SetMonitor(otelmongo.NewMonitor()))
 		if err != nil {
 			panic(err)
 		}
