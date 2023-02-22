@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"go-admin/app/labeler/model"
 	"go-admin/common/dto"
@@ -10,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"net/http"
+	"time"
 )
 
 const (
@@ -184,4 +188,43 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 	}
 
 	return nil
+}
+
+type ModelParseReq struct {
+	Raw model.Tuple `json:"raw"`
+}
+
+func (svc *LabelerService) ModelParse(ctx context.Context, raw ModelParseReq) ([]model.Tuple, error) {
+	buf, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, svc.ModelServerURL, bytes.NewBuffer(buf))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json;charset=utf-8")
+
+	client := &http.Client{
+		Timeout: 5 * time.Minute,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	var respBody struct {
+		Data struct {
+			Results []model.Tuple `json:"results"`
+		} `json:"data"`
+	}
+	if err = json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		return nil, err
+	}
+
+	return respBody.Data.Results, nil
 }

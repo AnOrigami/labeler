@@ -22,6 +22,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t/search", api.SearchTask())
 		g.GET("/api/v1/labeler/t/", api.GetTask())
 		g.POST("/api/v1/labeler/t/allocate", api.AllocateTasks())
+		g.POST("/api/v1/labeler/parse", api.ModelParse())
 	}
 }
 
@@ -148,5 +149,24 @@ func (api *LabelerAPI) AllocateTasks() GinHandler {
 			return
 		}
 		response.OK(c, nil, "分配成功")
+	}
+}
+
+func (api *LabelerAPI) ModelParse() GinHandler {
+	return func(c *gin.Context) {
+		var req service.ModelParseReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+
+		resp, err := api.LabelerService.ModelParse(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "获取成功")
 	}
 }

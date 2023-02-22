@@ -22,6 +22,7 @@ type Extend struct {
 	WeComInteractive WeComInteractiveConfig `yaml:"wecominteractive"`
 	MinIO            MinIOConfig            `yaml:"minio"`
 	Mongodb          MongodbConfig          `yaml:"mongodb"`
+	ModelServerURL   string                 `yaml:"modelServerURL"`
 }
 
 type AMap struct {
