@@ -191,25 +191,26 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 }
 
 type ModelParseReq struct {
-	Raw model.Tuple `json:"raw"`
+	Raw      model.Tuple `json:"raw"`
+	ModelURL string      `json:"modelURL"`
 }
 
-func (svc *LabelerService) ModelParse(ctx context.Context, raw ModelParseReq) ([]model.Tuple, error) {
-	buf, err := json.Marshal(raw)
+func (svc *LabelerService) ModelParse(ctx context.Context, req ModelParseReq) ([]model.Tuple, error) {
+	buf, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, svc.ModelServerURL, bytes.NewBuffer(buf))
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, req.ModelURL, bytes.NewBuffer(buf))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json;charset=utf-8")
+	httpRequest.Header.Set("Content-Type", "application/json;charset=utf-8")
 
 	client := &http.Client{
 		Timeout: 5 * time.Minute,
 	}
-	resp, err := client.Do(req)
+	resp, err := client.Do(httpRequest)
 	if err != nil {
 		return nil, err
 	}

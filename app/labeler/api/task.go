@@ -160,6 +160,10 @@ func (api *LabelerAPI) ModelParse() GinHandler {
 			response.Error(c, 500, err, "参数异常")
 			return
 		}
+		if req.ModelURL == "" {
+			response.Error(c, 500, nil, "modelURL为空")
+			return
+		}
 
 		resp, err := api.LabelerService.ModelParse(c.Request.Context(), req)
 		if err != nil {
