@@ -20,9 +20,10 @@ type Task struct {
 }
 
 type Content struct {
-	ID      string  `bson:"id" json:"id"`
-	Raw     Tuple   `bson:"raw" json:"raw"`
-	Results []Tuple `bson:"results" json:"results"`
+	ID         string     `bson:"id" json:"id"`
+	Raw        Tuple      `bson:"raw" json:"raw"`
+	Results    []Tuple    `bson:"results" json:"results"`
+	Activities []Activity `bson:"activities" json:"activities"`
 }
 
 type Permissions struct {
@@ -59,4 +60,11 @@ type Sentence struct {
 type Span struct {
 	Left  int `bson:"left" json:"left"`
 	Right int `bson:"right" json:"right"`
+}
+
+type Activity struct {
+	User      string        `bson:"user" json:"user"`
+	Role      string        `bson:"role" json:"role"`
+	Action    string        `bson:"action" json:"action"`
+	Parameter []interface{} `bson:"parameter" json:"parameter"`
 }

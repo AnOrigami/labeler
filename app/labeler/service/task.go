@@ -39,7 +39,12 @@ func (svc *LabelerService) UploadTask(ctx context.Context, req []model.Task) (Up
 }
 
 func (svc *LabelerService) UpdateTask(ctx context.Context, req model.Task) (model.Task, error) {
-	data := bson.M{"$set": bson.M{"contents": req.Contents}}
+	data := bson.M{
+		"$set": bson.M{
+			"contents": req.Contents,
+			"status":   req.Status,
+		},
+	}
 	if _, err := svc.CollectionTask.UpdateByID(ctx, req.ID, data); err != nil {
 		log.Logger().WithContext(ctx).Error("update task: ", err.Error())
 		return model.Task{}, ErrDatabase
