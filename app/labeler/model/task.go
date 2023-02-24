@@ -22,6 +22,7 @@ type Task struct {
 type Content struct {
 	ID         string     `bson:"id" json:"id"`
 	Raw        Tuple      `bson:"raw" json:"raw"`
+	Editable   bool       `bson:"editable" json:"editable"`
 	Results    []Tuple    `bson:"results" json:"results"`
 	Activities []Activity `bson:"activities" json:"activities"`
 }
