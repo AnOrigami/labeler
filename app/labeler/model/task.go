@@ -20,11 +20,13 @@ type Task struct {
 }
 
 type Content struct {
-	ID         string     `bson:"id" json:"id"`
-	Raw        Tuple      `bson:"raw" json:"raw"`
-	Editable   bool       `bson:"editable" json:"editable"`
-	Results    []Tuple    `bson:"results" json:"results"`
-	Activities []Activity `bson:"activities" json:"activities"`
+	ID         string      `bson:"id" json:"id"`
+	Raw        Tuple       `bson:"raw" json:"raw"`
+	Editable   bool        `bson:"editable" json:"editable"`
+	Results    []Tuple     `bson:"results" json:"results"`
+	Activities []Activity  `bson:"activities" json:"activities"`
+	Del        bool        `bson:"del" json:"del"`
+	Changes    interface{} `bson:"changes" json:"changes"`
 }
 
 type Permissions struct {
@@ -38,7 +40,7 @@ type Person struct {
 
 type Tuple struct {
 	Groups  []Group     `bson:"groups" json:"groups"`
-	Del     bool        `json:"del" json:"del"`
+	Del     bool        `bson:"del" json:"del"`
 	Changes interface{} `bson:"changes" json:"changes"`
 }
 
@@ -47,14 +49,14 @@ type Group struct {
 	Type     string      `bson:"type" json:"type"`
 	Status   string      `bson:"status" json:"status"`
 	Entities []Entity    `bson:"entities" json:"entities"`
-	Del      bool        `json:"del" json:"del"`
+	Del      bool        `bson:"del" json:"del"`
 	Changes  interface{} `bson:"changes" json:"changes"`
 }
 
 type Entity struct {
 	ID        string      `bson:"id" json:"id"`
 	Sentences []Sentence  `bson:"sentences" json:"sentences"`
-	Del       bool        `json:"del" json:"del"`
+	Del       bool        `bson:"del" json:"del"`
 	Changes   interface{} `bson:"changes" json:"changes"`
 }
 
@@ -62,7 +64,7 @@ type Sentence struct {
 	Text    string      `bson:"text" json:"text"`
 	Source  string      `bson:"source" json:"source"`
 	Span    Span        `bson:"span" json:"span"`
-	Del     bool        `json:"del" json:"del"`
+	Del     bool        `bson:"del" json:"del"`
 	Changes interface{} `bson:"changes" json:"changes"`
 }
 
