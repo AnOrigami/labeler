@@ -169,7 +169,7 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 			return err
 		}
 
-		var idArray bson.A
+		idArray := []primitive.ObjectID{}
 		for _, t := range tasks {
 			idArray = append(idArray, t.ID)
 		}
