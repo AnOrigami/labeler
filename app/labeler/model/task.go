@@ -26,7 +26,7 @@ type Content struct {
 	Results    []Tuple     `bson:"results" json:"results"`
 	Activities []Activity  `bson:"activities" json:"activities"`
 	Del        bool        `bson:"del" json:"del"`
-	Changes    interface{} `bson:"changes" json:"changes"`
+	Changes    primitive.M `bson:"changes" json:"changes"`
 }
 
 type Permissions struct {
@@ -41,7 +41,7 @@ type Person struct {
 type Tuple struct {
 	Groups  []Group     `bson:"groups" json:"groups"`
 	Del     bool        `bson:"del" json:"del"`
-	Changes interface{} `bson:"changes" json:"changes"`
+	Changes primitive.M `bson:"changes" json:"changes"`
 }
 
 type Group struct {
@@ -50,14 +50,14 @@ type Group struct {
 	Status   string      `bson:"status" json:"status"`
 	Entities []Entity    `bson:"entities" json:"entities"`
 	Del      bool        `bson:"del" json:"del"`
-	Changes  interface{} `bson:"changes" json:"changes"`
+	Changes  primitive.M `bson:"changes" json:"changes"`
 }
 
 type Entity struct {
 	ID        string      `bson:"id" json:"id"`
 	Sentences []Sentence  `bson:"sentences" json:"sentences"`
 	Del       bool        `bson:"del" json:"del"`
-	Changes   interface{} `bson:"changes" json:"changes"`
+	Changes   primitive.M `bson:"changes" json:"changes"`
 }
 
 type Sentence struct {
@@ -65,7 +65,7 @@ type Sentence struct {
 	Source  string      `bson:"source" json:"source"`
 	Span    Span        `bson:"span" json:"span"`
 	Del     bool        `bson:"del" json:"del"`
-	Changes interface{} `bson:"changes" json:"changes"`
+	Changes primitive.M `bson:"changes" json:"changes"`
 }
 
 type Span struct {
