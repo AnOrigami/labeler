@@ -37,27 +37,33 @@ type Person struct {
 }
 
 type Tuple struct {
-	Groups []Group `bson:"groups" json:"groups"`
+	Groups  []Group     `bson:"groups" json:"groups"`
+	Del     bool        `json:"del" json:"del"`
+	Changes interface{} `bson:"changes" json:"changes"`
 }
 
 type Group struct {
-	ID       string   `bson:"id" json:"id"`
-	Type     string   `bson:"type" json:"type"`
-	Status   string   `bson:"status" json:"status"`
-	Entities []Entity `bson:"entities" json:"entities"`
+	ID       string      `bson:"id" json:"id"`
+	Type     string      `bson:"type" json:"type"`
+	Status   string      `bson:"status" json:"status"`
+	Entities []Entity    `bson:"entities" json:"entities"`
+	Del      bool        `json:"del" json:"del"`
+	Changes  interface{} `bson:"changes" json:"changes"`
 }
 
 type Entity struct {
-	ID        string     `bson:"id" json:"id"`
-	Sentences []Sentence `bson:"sentences" json:"sentences"`
+	ID        string      `bson:"id" json:"id"`
+	Sentences []Sentence  `bson:"sentences" json:"sentences"`
+	Del       bool        `json:"del" json:"del"`
+	Changes   interface{} `bson:"changes" json:"changes"`
 }
 
 type Sentence struct {
-	Text    string  `bson:"text" json:"text"`
-	Source  string  `bson:"source" json:"source"`
-	Span    Span    `bson:"span" json:"span"`
-	Del     bool    `json:"del" json:"del"`
-	Changes Changes `bson:"changes" json:"changes"`
+	Text    string      `bson:"text" json:"text"`
+	Source  string      `bson:"source" json:"source"`
+	Span    Span        `bson:"span" json:"span"`
+	Del     bool        `json:"del" json:"del"`
+	Changes interface{} `bson:"changes" json:"changes"`
 }
 
 type Span struct {
@@ -72,8 +78,8 @@ type Activity struct {
 	Parameter []interface{} `bson:"parameter" json:"parameter"`
 }
 
-type Changes struct {
-	New  string `bson:"new" json:"new"`
-	Old  string `bson:"old" json:"old"`
-	Type string `bson:"type" json:"type"`
-}
+//type Changes struct {
+//	New  string `bson:"new" json:"new"`
+//	Old  string `bson:"old" json:"old"`
+//	Type string `bson:"type" json:"type"`
+//}
