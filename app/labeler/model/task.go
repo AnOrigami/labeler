@@ -53,11 +53,11 @@ type Entity struct {
 }
 
 type Sentence struct {
-	Text    string   `bson:"text" json:"text"`
-	Source  string   `bson:"source" json:"source"`
-	Span    Span     `bson:"span" json:"span"`
-	Del     bool     `json:"del" json:"del"`
-	Changes []Change `bson:"changes" json:"changes"`
+	Text    string  `bson:"text" json:"text"`
+	Source  string  `bson:"source" json:"source"`
+	Span    Span    `bson:"span" json:"span"`
+	Del     bool    `json:"del" json:"del"`
+	Changes Changes `bson:"changes" json:"changes"`
 }
 
 type Span struct {
@@ -72,7 +72,7 @@ type Activity struct {
 	Parameter []interface{} `bson:"parameter" json:"parameter"`
 }
 
-type Change struct {
+type Changes struct {
 	New  string `bson:"new" json:"new"`
 	Old  string `bson:"old" json:"old"`
 	Type string `bson:"type" json:"type"`
