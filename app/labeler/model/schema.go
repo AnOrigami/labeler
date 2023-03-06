@@ -3,10 +3,15 @@ package model
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Schema struct {
-	ID         primitive.ObjectID `bson:"_id" json:"id"`
-	Name       string             `bson:"name" json:"name"`
-	RuleGroups []RuleGroup        `bson:"ruleGroups" json:"ruleGroups"`
-	Model      Model              `bson:"model" json:"model"`
+	ID    primitive.ObjectID `bson:"_id" json:"id"`
+	Name  string             `bson:"name" json:"name"`
+	Rule  Rule               `bson:"rule" json:"rule"`
+	Model Model              `bson:"model" json:"model"`
+}
+
+type Rule struct {
+	Raw    []RuleGroup `bson:"raw" json:"raw"`
+	Result []RuleGroup `bson:"result" json:"result"`
 }
 
 type RuleGroup struct {
