@@ -39,7 +39,7 @@ func (api *LabelerAPI) CreateProject() GinHandler {
 			return
 		}
 
-		response.OK(c, resp, "")
+		response.OK(c, resp, "创建成功")
 	}
 }
 

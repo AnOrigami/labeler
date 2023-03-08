@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go-admin/app/labeler/model"
 	"go-admin/common/dto"
@@ -224,12 +225,23 @@ func (svc *LabelerService) ModelParse(ctx context.Context, req ModelParseReq) ([
 	}()
 
 	var respBody struct {
+		Code int    `json:"code"`
+		Msg  string `json:"error_msg"`
 		Data struct {
 			Results []model.Tuple `json:"results"`
 		} `json:"data"`
 	}
 	if err = json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
 		return nil, err
+	}
+	if respBody.Code >= 400 {
+		if respBody.Msg == "" {
+			return nil, errors.New("解析出错")
+		}
+		return nil, fmt.Errorf("解析出错: %s", respBody.Msg)
+	}
+	if len(respBody.Data.Results) == 0 {
+		return nil, errors.New("解析失败")
 	}
 
 	return respBody.Data.Results, nil
