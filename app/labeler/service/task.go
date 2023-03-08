@@ -234,10 +234,7 @@ func (svc *LabelerService) ModelParse(ctx context.Context, req ModelParseReq) ([
 	if err = json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
 		return nil, err
 	}
-	if respBody.Code >= 400 {
-		if respBody.Msg == "" {
-			return nil, errors.New("解析出错")
-		}
+	if respBody.Msg != "" {
 		return nil, fmt.Errorf("解析出错: %s", respBody.Msg)
 	}
 	if len(respBody.Data.Results) == 0 {
