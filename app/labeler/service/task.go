@@ -9,6 +9,7 @@ import (
 	"go-admin/app/labeler/model"
 	"go-admin/common/dto"
 	"go-admin/common/log"
+	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -49,8 +50,9 @@ func (svc *LabelerService) UpdateTask(ctx context.Context, req model.Task) (mode
 	}
 	data := bson.M{
 		"$set": bson.M{
-			"contents": req.Contents,
-			"status":   req.Status,
+			"contents":   req.Contents,
+			"status":     req.Status,
+			"updateTime": util.Datetime(time.Now()),
 		},
 	}
 	if _, err := svc.CollectionTask.UpdateByID(ctx, req.ID, data); err != nil {
@@ -62,9 +64,15 @@ func (svc *LabelerService) UpdateTask(ctx context.Context, req model.Task) (mode
 }
 
 type SearchTaskReq struct {
-	ProjectID primitive.ObjectID `json:"projectId"`
-	Status    string             `json:"status"`
-	PType     string             `json:"pType"`
+	ProjectID       primitive.ObjectID `json:"projectId"`
+	ID              primitive.ObjectID `json:"id"`
+	Name            string             `json:"name"`
+	Status          []string           `json:"status"`
+	Labeler         []string           `json:"labeler"`
+	Checker         []string           `json:"checker"`
+	UpdateTimeStart string             `json:"updateTimeStart"`
+	UpdateTimeEnd   string             `json:"updateTimeEnd"`
+	PType           string             `json:"pType"`
 
 	UserID    int
 	DataScope string
@@ -72,30 +80,11 @@ type SearchTaskReq struct {
 }
 
 func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([]model.Task, int, error) {
-	filter := bson.M{}
-	if !req.ProjectID.IsZero() {
-		filter["projectId"] = req.ProjectID
+	filter, err := buildFilter(req)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
 	}
-	if len(req.Status) > 0 {
-		filter["status"] = req.Status
-	}
-	switch req.PType {
-	case PermissionTypeLabeler:
-		filter["permissions.labeler.id"] = fmt.Sprint(req.UserID)
-	case PermissionTypeChecker:
-		filter["permissions.checker.id"] = fmt.Sprint(req.UserID)
-	default:
-		if req.DataScope == "5" {
-			filter["$or"] = bson.A{
-				bson.M{
-					"permissions.labeler.id": fmt.Sprint(req.UserID),
-				},
-				bson.M{
-					"permissions.checker.id": fmt.Sprint(req.UserID)},
-			}
-		}
-	}
-
 	opts := options.Find().
 		SetSort(bson.D{{"_id", 1}}).
 		SetLimit(int64(req.PageSize)).
@@ -119,6 +108,71 @@ func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([
 	}
 
 	return tasks, int(count), nil
+}
+
+func buildFilter(req SearchTaskReq) (bson.M, error) {
+	filter := bson.M{}
+	if !req.ID.IsZero() {
+		filter["_id"] = req.ID
+	}
+	if !req.ProjectID.IsZero() {
+		filter["projectId"] = req.ProjectID
+	}
+	if len(req.Status) > 0 {
+		filter["status"] = bson.M{
+			"$in": req.Status,
+		}
+	}
+	if len(req.Labeler) > 0 {
+		filter["permissions.labeler.id"] = bson.M{
+			"$in": req.Labeler,
+		}
+	}
+	if len(req.Checker) > 0 {
+		filter["permissions.checker.id"] = bson.M{
+			"$in": req.Checker,
+		}
+	}
+	if len(req.Name) > 0 {
+		filter["name"] = bson.M{
+			"$regex": req.Name,
+		}
+	}
+	if len(req.UpdateTimeStart) > 0 {
+		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
+		if err != nil {
+			return nil, ErrTimeParse
+		}
+		filter["updateTime"] = bson.M{
+			"$gte": t,
+		}
+	}
+	if len(req.UpdateTimeEnd) > 0 {
+		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
+		if err != nil {
+			return nil, ErrTimeParse
+		}
+		filter["updateTime"] = bson.M{
+			"$lte": t,
+		}
+	}
+	switch req.PType {
+	case PermissionTypeLabeler:
+		filter["permissions.labeler.id"] = fmt.Sprint(req.UserID)
+	case PermissionTypeChecker:
+		filter["permissions.checker.id"] = fmt.Sprint(req.UserID)
+	default:
+		if req.DataScope == "5" {
+			filter["$or"] = bson.A{
+				bson.M{
+					"permissions.labeler.id": fmt.Sprint(req.UserID),
+				},
+				bson.M{
+					"permissions.checker.id": fmt.Sprint(req.UserID)},
+			}
+		}
+	}
+	return filter, nil
 }
 
 func (svc *LabelerService) GetTask(ctx context.Context, id primitive.ObjectID) (model.Task, error) {
@@ -191,14 +245,13 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 			"$set": bson.M{
 				"permissions.labeler": model.Person{ID: fmt.Sprint(id)},
 				"status":              model.TaskStatusLabeling,
+				"updateTime":          util.Datetime(time.Now()),
 			},
 		}
-		r, err := svc.CollectionTask.UpdateMany(ctx, ft, update)
-		if err != nil {
+		if _, err := svc.CollectionTask.UpdateMany(ctx, ft, update); err != nil {
 			log.Logger().WithContext(ctx).Error(err.Error())
 			return err
 		}
-		fmt.Printf("id:%s, update:%v", id, r)
 	}
 
 	return nil

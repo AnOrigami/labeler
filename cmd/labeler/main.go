@@ -18,7 +18,10 @@ import (
 	"go-admin/common/log"
 	common "go-admin/common/middleware"
 	"go-admin/common/storage"
+	"go-admin/common/util"
 	ext "go-admin/config"
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
+	"go.mongodb.org/mongo-driver/bson/bsonoptions"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -26,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"time"
 )
 
@@ -76,7 +80,13 @@ func run() error {
 		cfg := ext.ExtConfig.Mongodb
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.DSN).SetMonitor(otelmongo.NewMonitor()))
+
+		rb := bsoncodec.NewRegistryBuilder()
+		bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(rb)
+		bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(rb)
+		timeCodec := util.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
+		rb.RegisterCodec(reflect.TypeOf(util.Datetime{}), timeCodec)
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.DSN).SetMonitor(otelmongo.NewMonitor()).SetRegistry(rb.Build()))
 		if err != nil {
 			panic(err)
 		}

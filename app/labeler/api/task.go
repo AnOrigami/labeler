@@ -8,7 +8,9 @@ import (
 	"go-admin/app/labeler/service"
 	"go-admin/common/actions"
 	"go-admin/common/log"
+	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 func init() {
@@ -42,6 +44,7 @@ func (api *LabelerAPI) UploadTask() GinHandler {
 			return
 		}
 		tasks := make([]model.Task, len(files))
+		now := util.Datetime(time.Now())
 		for i, fh := range files {
 			document, err := ReadFileHeader(fh)
 			if err != nil {
@@ -50,12 +53,13 @@ func (api *LabelerAPI) UploadTask() GinHandler {
 				return
 			}
 			tasks[i] = model.Task{
-				ID:        primitive.NewObjectID(),
-				ProjectID: projectID,
-				Name:      fh.Filename,
-				Status:    model.TaskStatusAllocate,
-				Document:  document,
-				Contents:  []model.Content{},
+				ID:         primitive.NewObjectID(),
+				ProjectID:  projectID,
+				Name:       fh.Filename,
+				Status:     model.TaskStatusAllocate,
+				Document:   document,
+				Contents:   []model.Content{},
+				UpdateTime: now,
 			}
 		}
 		resp, err := api.LabelerService.UploadTask(c.Request.Context(), tasks)
