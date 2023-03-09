@@ -3,10 +3,12 @@ package model
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 const (
+	TaskStatusAllocate = "待分配"
 	TaskStatusLabeling = "待标注"
+	TaskStatusSubmit   = "已提交"
 	TaskStatusChecking = "待审核"
-	TaskStatusPassed   = "已通过"
-	TaskStatusFailed   = "未通过"
+	TaskStatusPassed   = "已审核"
+	TaskStatusFailed   = "审核不通过"
 )
 
 type Task struct {

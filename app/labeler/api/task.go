@@ -53,7 +53,7 @@ func (api *LabelerAPI) UploadTask() GinHandler {
 				ID:        primitive.NewObjectID(),
 				ProjectID: projectID,
 				Name:      fh.Filename,
-				Status:    model.TaskStatusLabeling,
+				Status:    model.TaskStatusAllocate,
 				Document:  document,
 				Contents:  []model.Content{},
 			}
