@@ -61,6 +61,7 @@ type Entity struct {
 }
 
 type Sentence struct {
+	ID      string      `bson:"id" json:"id"`
 	Text    string      `bson:"text" json:"text"`
 	Source  string      `bson:"source" json:"source"`
 	Span    Span        `bson:"span" json:"span"`
