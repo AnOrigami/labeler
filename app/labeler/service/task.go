@@ -40,6 +40,13 @@ func (svc *LabelerService) UploadTask(ctx context.Context, req []model.Task) (Up
 }
 
 func (svc *LabelerService) UpdateTask(ctx context.Context, req model.Task) (model.Task, error) {
+	task, err := svc.GetTask(ctx, req.ID)
+	if err != nil {
+		return model.Task{}, err
+	}
+	if task.Status == model.TaskStatusChecking || task.Status == model.TaskStatusPassed {
+		return model.Task{}, errors.New("当前状态无法修改")
+	}
 	data := bson.M{
 		"$set": bson.M{
 			"contents": req.Contents,
@@ -183,6 +190,7 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 		update := bson.M{
 			"$set": bson.M{
 				"permissions.labeler": model.Person{ID: fmt.Sprint(id)},
+				"status":              model.TaskStatusLabeling,
 			},
 		}
 		r, err := svc.CollectionTask.UpdateMany(ctx, ft, update)
