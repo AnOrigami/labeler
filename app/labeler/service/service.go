@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrDatabase = errors.New("服务器出问题了")
-	ErrNoDoc    = errors.New("文档不存在")
+	ErrDatabase  = errors.New("服务器出问题了")
+	ErrNoDoc     = errors.New("文档不存在")
+	ErrTimeParse = errors.New("时间格式异常")
 )
 
 type LabelerService struct {

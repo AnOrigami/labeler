@@ -1,6 +1,9 @@
 package model
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go-admin/common/util"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 const (
 	TaskStatusAllocate = "待分配"
@@ -19,6 +22,7 @@ type Task struct {
 	Document    string             `bson:"document" json:"document"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
 	Contents    []Content          `bson:"contents" json:"contents"`
+	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
 }
 
 type Content struct {

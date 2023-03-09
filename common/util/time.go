@@ -11,6 +11,7 @@ func init() {
 
 const (
 	TimeLayoutDatetimeN = "2006-01-02 15:04:05.9"
+	TimeLayoutDatetime  = "2006-01-02 15:04:05"
 )
 
 type Datetime time.Time
@@ -37,7 +38,7 @@ func (d *Datetime) MarshalJSON() ([]byte, error) {
 	if d == nil {
 		return []byte("null"), nil
 	}
-	s := (time.Time)(*d).Format(TimeLayoutDatetimeN)
+	s := (time.Time)(*d).Format(TimeLayoutDatetime)
 	return append([]byte(`"`), append([]byte(s), '"')...), nil
 }
 
