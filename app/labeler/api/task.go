@@ -59,6 +59,7 @@ func (api *LabelerAPI) UploadTask() GinHandler {
 				Status:     model.TaskStatusAllocate,
 				Document:   document,
 				Contents:   []model.Content{},
+				Activities: []model.Activity{},
 				UpdateTime: now,
 			}
 		}
