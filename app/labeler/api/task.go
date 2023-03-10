@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
+	"github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth/user"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
 	"go-admin/app/labeler/model"
 	"go-admin/app/labeler/service"
@@ -20,7 +21,7 @@ func init() {
 func taskAuthRouter() RouterCheckRole {
 	return func(g *gin.RouterGroup, api *LabelerAPI, authMiddleware *jwt.GinJWTMiddleware) {
 		g.POST("/api/v1/labeler/t/upload", api.UploadTask())
-		g.PUT("/api/v1/labeler/t/", api.UpdateTask())
+		g.PUT("/api/v1/labeler/t/label", api.LabelTask())
 		g.POST("/api/v1/labeler/t/search", api.SearchTask())
 		g.GET("/api/v1/labeler/t/", api.GetTask())
 		g.POST("/api/v1/labeler/t/allocate", api.AllocateTasks())
@@ -73,7 +74,7 @@ func (api *LabelerAPI) UploadTask() GinHandler {
 	}
 }
 
-func (api *LabelerAPI) UpdateTask() GinHandler {
+func (api *LabelerAPI) LabelTask() GinHandler {
 	return func(c *gin.Context) {
 		var req model.Task
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,8 +86,8 @@ func (api *LabelerAPI) UpdateTask() GinHandler {
 			response.Error(c, 500, nil, "id不能为空")
 			return
 		}
-
-		resp, err := api.LabelerService.UpdateTask(c, req)
+		userID := user.GetUserId(c)
+		resp, err := api.LabelerService.LabelTask(c, req, userID)
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return

@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -40,14 +41,18 @@ func (svc *LabelerService) UploadTask(ctx context.Context, req []model.Task) (Up
 	return UploadTaskResp{UploadCount: len(result.InsertedIDs)}, err
 }
 
-func (svc *LabelerService) UpdateTask(ctx context.Context, req model.Task) (model.Task, error) {
+func (svc *LabelerService) LabelTask(ctx context.Context, req model.Task, userID int) (model.Task, error) {
 	task, err := svc.GetTask(ctx, req.ID)
 	if err != nil {
 		return model.Task{}, err
 	}
-	if task.Status == model.TaskStatusChecking || task.Status == model.TaskStatusPassed {
+	if req.Permissions.Labeler.ID != strconv.Itoa(userID) {
+		return model.Task{}, errors.New("无权限修改")
+	}
+	if !TaskStatusCheck(true, task.Status, req.Status) {
 		return model.Task{}, errors.New("当前状态无法修改")
 	}
+
 	data := bson.M{
 		"$set": bson.M{
 			"contents":   req.Contents,
@@ -350,4 +355,30 @@ func (svc *LabelerService) ModelParse(ctx context.Context, req ModelParseReq) ([
 	}
 
 	return respBody.Data.Results, nil
+}
+
+var Labeler = map[string]map[string]bool{
+	model.TaskStatusLabeling: {model.TaskStatusLabeling: true, model.TaskStatusSubmit: true},
+	model.TaskStatusSubmit:   {model.TaskStatusSubmit: true},
+}
+
+var Checker = map[string]map[string]bool{
+	model.TaskStatusChecking: {model.TaskStatusChecking: true, model.TaskStatusPassed: true, model.TaskStatusFailed: true},
+}
+
+func TaskStatusCheck(isLabeler bool, src string, dst string) (result bool) {
+	if isLabeler {
+		if value, ok := Labeler[src]; ok {
+			if value[dst] {
+				result = true
+			}
+		}
+		return
+	}
+	if value, ok := Checker[src]; ok {
+		if value[dst] {
+			result = true
+		}
+	}
+	return
 }
