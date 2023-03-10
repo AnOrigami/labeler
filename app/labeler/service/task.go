@@ -73,23 +73,30 @@ type SearchTaskReq struct {
 	UpdateTimeStart string             `json:"updateTimeStart"`
 	UpdateTimeEnd   string             `json:"updateTimeEnd"`
 	PType           string             `json:"pType"`
+	SortAsc         bool               `json:"sortAsc"`
 
 	UserID    int
 	DataScope string
 	dto.Pagination
 }
 
-func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([]model.Task, int, error) {
+type SearchTaskResp struct {
+	ID         primitive.ObjectID `json:"id"`
+	Name       string             `json:"name"`
+	Status     string             `json:"status"`
+	Labeler    string             `json:"labeler"`
+	Checker    string             `json:"checker"`
+	UpdateTime util.Datetime      `json:"updateTime"`
+}
+
+func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([]SearchTaskResp, int, error) {
 	filter, err := buildFilter(req)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
 	}
-	opts := options.Find().
-		SetSort(bson.D{{"_id", 1}}).
-		SetLimit(int64(req.PageSize)).
-		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
-	cursor, err := svc.CollectionTask.Find(ctx, filter, opts)
+
+	cursor, err := svc.CollectionTask.Find(ctx, filter, buildOptions(req))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -100,6 +107,10 @@ func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
 	}
+	results := make([]SearchTaskResp, 0, len(tasks))
+	for i := range tasks {
+		results = append(results, taskToSearchTaskResp(tasks[i]))
+	}
 
 	count, err := svc.CollectionTask.CountDocuments(ctx, filter)
 	if err != nil {
@@ -107,7 +118,25 @@ func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([
 		return nil, 0, err
 	}
 
-	return tasks, int(count), nil
+	return results, int(count), nil
+}
+
+func buildOptions(req SearchTaskReq) *options.FindOptions {
+	if req.PageIndex < 1 {
+		req.PageIndex = 1
+	}
+	if req.PageSize < 1 {
+		req.PageSize = 10
+	}
+	opts := options.Find().
+		SetLimit(int64(req.PageSize)).
+		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
+	sortValue := -1
+	if req.SortAsc {
+		sortValue = 1
+	}
+	opts.SetSort(bson.D{{"updateTime", sortValue}})
+	return opts
 }
 
 func buildFilter(req SearchTaskReq) (bson.M, error) {
@@ -173,6 +202,24 @@ func buildFilter(req SearchTaskReq) (bson.M, error) {
 		}
 	}
 	return filter, nil
+}
+
+func taskToSearchTaskResp(task model.Task) SearchTaskResp {
+	var labeler, checker string
+	if task.Permissions.Labeler != nil {
+		labeler = task.Permissions.Labeler.ID
+	}
+	if task.Permissions.Checker != nil {
+		checker = task.Permissions.Checker.ID
+	}
+	return SearchTaskResp{
+		ID:         task.ID,
+		Name:       task.Name,
+		Status:     task.Status,
+		Labeler:    labeler,
+		Checker:    checker,
+		UpdateTime: task.UpdateTime,
+	}
 }
 
 func (svc *LabelerService) GetTask(ctx context.Context, id primitive.ObjectID) (model.Task, error) {
