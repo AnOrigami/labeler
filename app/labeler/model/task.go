@@ -22,17 +22,17 @@ type Task struct {
 	Document    string             `bson:"document" json:"document"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
 	Contents    []Content          `bson:"contents" json:"contents"`
+	Activities  []Activity         `bson:"activities" json:"activities"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
 }
 
 type Content struct {
-	ID         string      `bson:"id" json:"id"`
-	Raw        Tuple       `bson:"raw" json:"raw"`
-	Editable   bool        `bson:"editable" json:"editable"`
-	Results    []Tuple     `bson:"results" json:"results"`
-	Activities []Activity  `bson:"activities" json:"activities"`
-	Del        bool        `bson:"del" json:"del"`
-	Changes    primitive.M `bson:"changes" json:"changes"`
+	ID       string      `bson:"id" json:"id"`
+	Raw      Tuple       `bson:"raw" json:"raw"`
+	Editable bool        `bson:"editable" json:"editable"`
+	Results  []Tuple     `bson:"results" json:"results"`
+	Del      bool        `bson:"del" json:"del"`
+	Changes  primitive.M `bson:"changes" json:"changes"`
 }
 
 type Permissions struct {
