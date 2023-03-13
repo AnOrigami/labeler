@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	TaskStatusAllocate = "待分配"
+	TaskStatusAllocate = "未分配"
 	TaskStatusLabeling = "待标注"
 	TaskStatusSubmit   = "已提交"
 	TaskStatusChecking = "待审核"

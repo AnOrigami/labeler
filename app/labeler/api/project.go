@@ -20,6 +20,7 @@ func projectAuthRouter() RouterCheckRole {
 		g.DELETE("/api/v1/labeler/p/", api.DeleteProject())
 		g.POST("/api/v1/labeler/p/search", api.SearchProject())
 		g.GET("/api/v1/labeler/p/detail", api.ProjectDetail())
+		g.GET("/api/v1/labeler/p/count", api.ProjectCount())
 	}
 }
 
@@ -104,6 +105,27 @@ func (api *LabelerAPI) DeleteProject() GinHandler {
 			return
 		}
 		resp, err := api.LabelerService.DeleteProject(c.Request.Context(), service.DeleteProjectReq{ID: oid})
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "")
+	}
+}
+
+func (api *LabelerAPI) ProjectCount() GinHandler {
+	return func(c *gin.Context) {
+		oid, err := QueryObjectID(c)
+		if err != nil {
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if oid.IsZero() {
+			response.Error(c, 500, nil, "项目id不能为空")
+			return
+		}
+		resp, err := api.LabelerService.ProjectCount(c.Request.Context(), service.ProjectCountReq{ID: oid})
 		if err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "")

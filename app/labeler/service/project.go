@@ -6,6 +6,7 @@ import (
 	"go-admin/common/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -81,4 +82,79 @@ func (svc *LabelerService) DeleteProject(ctx context.Context, req DeleteProjectR
 		return DeleteProjectResp{}, err
 	}
 	return DeleteProjectResp{DeletedCount: result.DeletedCount}, nil
+}
+
+type ProjectCountReq struct {
+	ID primitive.ObjectID
+}
+
+type ProjectCountResp struct {
+	Total            int64 `json:"total"`
+	UnallocatedLabel int64 `json:"unallocatedLabel"`
+	AllocatedLabel   int64 `json:"allocatedLabel"`
+	Labeling         int64 `json:"labeling"`
+	Submit           int64 `json:"submit"`
+	UnallocatedCheck int64 `json:"unallocatedCheck"`
+	AllocatedCheck   int64 `json:"allocatedCheck"`
+	Checking         int64 `json:"checking"`
+	Passed           int64 `json:"passed"`
+	Failed           int64 `json:"failed"`
+}
+
+func (svc *LabelerService) ProjectCount(ctx context.Context, req ProjectCountReq) (ProjectCountResp, error) {
+	pipe := mongo.Pipeline{
+		bson.D{
+			{
+				"$match",
+				bson.D{{"projectId", req.ID}},
+			},
+		},
+		bson.D{
+			{
+				"$group",
+				bson.D{
+					{"_id", "$status"},
+					{"count", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+	cursor, err := svc.CollectionTask.Aggregate(ctx, pipe)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return ProjectCountResp{}, err
+	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	var results []bson.M
+	if err = cursor.All(ctx, &results); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return ProjectCountResp{}, err
+	}
+
+	var resp ProjectCountResp
+	for _, result := range results {
+		count := int64(result["count"].(int32))
+		switch result["_id"] {
+		case model.TaskStatusAllocate:
+			resp.UnallocatedLabel = count
+		case model.TaskStatusLabeling:
+			resp.Labeling = count
+		case model.TaskStatusSubmit:
+			resp.Submit = count
+		case model.TaskStatusChecking:
+			resp.Checking = count
+		case model.TaskStatusPassed:
+			resp.Passed = count
+		case model.TaskStatusFailed:
+			resp.Failed = count
+		}
+		resp.Total += count
+	}
+	resp.AllocatedCheck = resp.Checking + resp.Passed + resp.Failed
+	resp.UnallocatedCheck = resp.Submit
+	resp.AllocatedLabel = resp.Total - resp.UnallocatedLabel
+	return resp, nil
 }
