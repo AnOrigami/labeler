@@ -309,6 +309,50 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 	return nil
 }
 
+type ResetTasksReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Persons   []string           `json:"persons"`
+	Statuses  []string           `json:"statuses"`
+}
+
+func (svc *LabelerService) ResetTasks(ctx context.Context, req ResetTasksReq) error {
+	filter := bson.M{}
+	if !req.ProjectID.IsZero() {
+		filter["projectId"] = req.ProjectID
+	}
+	if len(req.Persons) > 0 {
+		filter["$or"] = bson.A{
+			bson.M{
+				"permissions.labeler.id": bson.M{
+					"$in": req.Persons,
+				},
+			},
+			bson.M{
+				"permissions.checker.id": bson.M{
+					"$in": req.Persons,
+				},
+			},
+		}
+	}
+	if len(req.Statuses) > 0 {
+		filter["status"] = bson.M{
+			"$in": req.Statuses,
+		}
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"permissions": model.Permissions{},
+			"status":      model.TaskStatusLabeling,
+			"updateTime":  util.Datetime(time.Now()),
+		},
+	}
+	if _, err := svc.CollectionTask.UpdateMany(ctx, filter, update); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return err
+	}
+	return nil
+}
+
 type ModelParseReq struct {
 	Raw      model.Tuple `json:"raw"`
 	ModelURL string      `json:"modelURL"`

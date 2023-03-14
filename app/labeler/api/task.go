@@ -11,6 +11,7 @@ import (
 	"go-admin/common/log"
 	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"net/http"
 	"time"
 )
 
@@ -25,6 +26,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t/search", api.SearchTask())
 		g.GET("/api/v1/labeler/t/", api.GetTask())
 		g.POST("/api/v1/labeler/t/allocate", api.AllocateTasks())
+		g.POST("/api/v1/labeler/t/reset", api.ResetTasks())
 		g.POST("/api/v1/labeler/parse", api.ModelParse())
 	}
 }
@@ -173,10 +175,35 @@ func (api *LabelerAPI) ModelParse() GinHandler {
 
 		resp, err := api.LabelerService.ModelParse(c.Request.Context(), req)
 		if err != nil {
-			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "")
 			return
 		}
 		response.OK(c, resp, "获取成功")
+	}
+}
+
+func (api *LabelerAPI) ResetTasks() GinHandler {
+	return func(c *gin.Context) {
+		p := actions.GetPermissionFromContext(c)
+		if p.DataScope != "1" && p.DataScope != "2" {
+			response.Error(c, http.StatusUnauthorized, nil, "当前用户没有操作权限")
+			return
+		}
+		var req service.ResetTasksReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ProjectID.IsZero() {
+			response.Error(c, 500, nil, "project id不能为空")
+			return
+		}
+
+		if err := api.LabelerService.ResetTasks(c.Request.Context(), req); err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, nil, "重置成功")
 	}
 }
