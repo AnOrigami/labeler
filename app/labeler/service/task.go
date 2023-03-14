@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -425,4 +426,75 @@ func TaskStatusCheck(isLabeler bool, src string, dst string) (result bool) {
 		}
 	}
 	return
+}
+
+type AllocateCheckTasksReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Persons   []string           `json:"persons"`
+	Number    int64              `json:"number"`
+}
+
+func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateCheckTasksReq) error {
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"status":    model.TaskStatusSubmit,
+		"permissions.labeler": bson.M{
+			"$exists": true,
+		},
+		"permissions.checker": bson.M{
+			"$exists": false,
+		},
+	}
+
+	maxCount := int(req.Number) / len(req.Persons)
+	personMap := make(map[string]int, len(req.Persons))
+	for _, id := range req.Persons {
+		personMap[id] = 0
+	}
+
+	result, err := svc.CollectionTask.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return err
+	}
+	var tasks []model.Task
+	if err = result.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return err
+	}
+	for _, task := range tasks {
+		var minCount = math.MaxInt
+		var minID string
+		for i, v := range personMap {
+			if i == task.Permissions.Labeler.ID {
+				continue
+			}
+			if v == maxCount {
+				continue
+			}
+			if v < minCount {
+				minCount = v
+				minID = i
+			}
+		}
+		if minID == "" {
+			break
+		}
+		personMap[minID]++
+		ft := bson.M{
+			"_id": task.ID,
+		}
+		update := bson.M{
+			"$set": bson.M{
+				"permissions.checker": model.Person{ID: minID},
+				"status":              model.TaskStatusChecking,
+				"updateTime":          util.Datetime(time.Now()),
+			},
+		}
+		if _, err := svc.CollectionTask.UpdateOne(ctx, ft, update); err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return err
+		}
+	}
+	return nil
 }
