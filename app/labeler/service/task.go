@@ -343,13 +343,75 @@ func (svc *LabelerService) ResetTasks(ctx context.Context, req ResetTasksReq) er
 	update := bson.M{
 		"$set": bson.M{
 			"permissions": model.Permissions{},
-			"status":      model.TaskStatusLabeling,
+			"status":      model.TaskStatusAllocate,
 			"updateTime":  util.Datetime(time.Now()),
 		},
 	}
 	if _, err := svc.CollectionTask.UpdateMany(ctx, filter, update); err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return err
+	}
+	return nil
+}
+
+func (svc *LabelerService) CheckTask(ctx context.Context, req model.Task, userID int) (model.Task, error) {
+	task, err := svc.GetTask(ctx, req.ID)
+	if err != nil {
+		return model.Task{}, err
+	}
+	if task.Permissions.Checker == nil || task.Permissions.Checker.ID != strconv.Itoa(userID) {
+		return model.Task{}, errors.New("当前用户无权限审核")
+	}
+	if !TaskStatusCheck(false, task.Status, req.Status) {
+		return model.Task{}, errors.New(fmt.Sprintf("当前任务状态为:%s,无法修改为:%s", task.Status, req.Status))
+	}
+
+	data := bson.M{
+		"$set": bson.M{
+			"contents":   req.Contents,
+			"status":     req.Status,
+			"updateTime": util.Datetime(time.Now()),
+		},
+	}
+	if _, err := svc.CollectionTask.UpdateByID(ctx, req.ID, data); err != nil {
+		log.Logger().WithContext(ctx).Error("update task: ", err.Error())
+		return model.Task{}, ErrDatabase
+	}
+
+	return req, nil
+}
+
+type CommentTaskReq struct {
+	ID      primitive.ObjectID `json:"id"`
+	Content string             `json:"content"`
+
+	UserID string
+}
+
+func (svc *LabelerService) CommentTask(ctx context.Context, req CommentTaskReq) error {
+	task, err := svc.GetTask(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+	if task.Permissions.Checker == nil || task.Permissions.Checker.ID != req.UserID {
+		return errors.New("当前用户无权限备注")
+	}
+	comment := model.Comment{
+		ID:         req.UserID,
+		Content:    req.Content,
+		CreateTime: util.Datetime(time.Now()),
+	}
+	data := bson.M{
+		"$set": bson.M{
+			"updateTime": util.Datetime(time.Now()),
+		},
+		"$push": bson.M{
+			"comments": comment,
+		},
+	}
+	if _, err := svc.CollectionTask.UpdateByID(ctx, req.ID, data); err != nil {
+		log.Logger().WithContext(ctx).Error("update task: ", err.Error())
+		return ErrDatabase
 	}
 	return nil
 }
@@ -409,6 +471,8 @@ var Labeler = map[string]map[string]bool{
 
 var Checker = map[string]map[string]bool{
 	model.TaskStatusChecking: {model.TaskStatusChecking: true, model.TaskStatusPassed: true, model.TaskStatusFailed: true},
+	model.TaskStatusPassed:   {model.TaskStatusChecking: true, model.TaskStatusPassed: true, model.TaskStatusFailed: true},
+	model.TaskStatusFailed:   {model.TaskStatusChecking: true, model.TaskStatusPassed: true, model.TaskStatusFailed: true},
 }
 
 func TaskStatusCheck(isLabeler bool, src string, dst string) (result bool) {

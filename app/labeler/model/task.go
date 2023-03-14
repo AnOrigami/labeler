@@ -24,6 +24,13 @@ type Task struct {
 	Contents    []Content          `bson:"contents" json:"contents"`
 	Activities  []Activity         `bson:"activities" json:"activities"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
+	Comments    []Comment          `bson:"comments" json:"comments"`
+}
+
+type Comment struct {
+	ID         string        `bson:"id" json:"id"`
+	Content    string        `bson:"content" json:"content"`
+	CreateTime util.Datetime `bson:"createTime" json:"createTime"`
 }
 
 type Content struct {

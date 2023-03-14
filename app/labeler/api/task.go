@@ -15,6 +15,7 @@ import (
 	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -30,6 +31,8 @@ func taskAuthRouter() RouterCheckRole {
 		g.GET("/api/v1/labeler/t/", api.GetTask())
 		g.POST("/api/v1/labeler/t/allocate", api.AllocateTasks())
 		g.POST("/api/v1/labeler/t/reset", api.ResetTasks())
+		g.PUT("/api/v1/labeler/t/check", api.CheckTask())
+		g.POST("/api/v1/labeler/t/comment", api.CommentTask())
 		g.POST("/api/v1/labeler/parse", api.ModelParse())
 		g.POST("/api/v1/labeler/t/checkallocate", api.AllocateCheckTasks())
 	}
@@ -209,6 +212,51 @@ func (api *LabelerAPI) ResetTasks() GinHandler {
 			return
 		}
 		response.OK(c, nil, "重置成功")
+	}
+}
+
+func (api *LabelerAPI) CheckTask() GinHandler {
+	return func(c *gin.Context) {
+		var req model.Task
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ID.IsZero() {
+			response.Error(c, 500, nil, "id不能为空")
+			return
+		}
+		userID := user.GetUserId(c)
+		resp, err := api.LabelerService.CheckTask(c, req, userID)
+		if err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+
+		response.OK(c, resp, "审核提交成功")
+	}
+}
+
+func (api *LabelerAPI) CommentTask() GinHandler {
+	return func(c *gin.Context) {
+		var req service.CommentTaskReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ID.IsZero() {
+			response.Error(c, 500, nil, "id不能为空")
+			return
+		}
+		req.UserID = strconv.Itoa(user.GetUserId(c))
+		if err := api.LabelerService.CommentTask(c, req); err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+
+		response.OK(c, nil, "备注提交成功")
 	}
 }
 
