@@ -1,12 +1,15 @@
 package api
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth/user"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
+	"go-admin/app/admin/models"
 	"go-admin/app/labeler/model"
 	"go-admin/app/labeler/service"
+	"go-admin/app/scrm"
 	"go-admin/common/actions"
 	"go-admin/common/log"
 	"go-admin/common/util"
@@ -28,6 +31,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t/allocate", api.AllocateTasks())
 		g.POST("/api/v1/labeler/t/reset", api.ResetTasks())
 		g.POST("/api/v1/labeler/parse", api.ModelParse())
+		g.POST("/api/v1/labeler/t/checkallocate", api.AllocateCheckTasks())
 	}
 }
 
@@ -205,5 +209,34 @@ func (api *LabelerAPI) ResetTasks() GinHandler {
 			return
 		}
 		response.OK(c, nil, "重置成功")
+	}
+}
+
+func (api *LabelerAPI) AllocateCheckTasks() GinHandler {
+	return func(c *gin.Context) {
+		roleID := user.GetRoleId(c)
+		var role models.SysRole
+		db := scrm.GormDB.WithContext(context.Background()).First(&role, roleID)
+		if err := db.Error; err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "db error")
+			return
+		}
+		if !role.Admin {
+			response.Error(c, 500, nil, "当前用户无分配审核任务权限")
+			return
+		}
+		var req service.AllocateCheckTasksReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if err := api.LabelerService.AllocateCheckTasks(c.Request.Context(), req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, nil, "分配成功")
 	}
 }
