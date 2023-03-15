@@ -499,6 +499,12 @@ type AllocateCheckTasksReq struct {
 }
 
 func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateCheckTasksReq) error {
+	if req.Number <= 0 {
+		return errors.New("分配任务数量不合法")
+	}
+	if len(req.Persons) == 0 {
+		return errors.New("分配人员数量不能为0")
+	}
 	filter := bson.M{
 		"projectId": req.ProjectID,
 		"status":    model.TaskStatusSubmit,
@@ -509,8 +515,10 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 			"$exists": false,
 		},
 	}
-
 	maxCount := int(req.Number) / len(req.Persons)
+	if maxCount < 1 {
+		maxCount = 1
+	}
 	personMap := make(map[string]int, len(req.Persons))
 	for _, id := range req.Persons {
 		personMap[id] = 0
@@ -526,6 +534,10 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return err
 	}
+	if len(tasks) == 0 {
+		return errors.New("当前无可分配任务")
+	}
+	var totalCount int
 	for _, task := range tasks {
 		var minCount = math.MaxInt
 		var minID string
@@ -542,7 +554,7 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 			}
 		}
 		if minID == "" {
-			break
+			continue
 		}
 		personMap[minID]++
 		ft := bson.M{
@@ -558,6 +570,10 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 		if _, err := svc.CollectionTask.UpdateOne(ctx, ft, update); err != nil {
 			log.Logger().WithContext(ctx).Error(err.Error())
 			return err
+		}
+		totalCount++
+		if totalCount == int(req.Number) {
+			break
 		}
 	}
 	return nil
