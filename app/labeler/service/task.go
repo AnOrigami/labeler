@@ -467,7 +467,7 @@ func (svc *LabelerService) ModelParse(ctx context.Context, req ModelParseReq) ([
 var Labeler = map[string]map[string]bool{
 	model.TaskStatusLabeling: {model.TaskStatusLabeling: true, model.TaskStatusSubmit: true},
 	model.TaskStatusSubmit:   {model.TaskStatusSubmit: true},
-	model.TaskStatusFailed:   {model.TaskStatusSubmit: true, model.TaskStatusLabeling: true},
+	model.TaskStatusFailed:   {model.TaskStatusFailed: true, model.TaskStatusChecking: true},
 }
 
 var Checker = map[string]map[string]bool{
