@@ -263,15 +263,12 @@ func (svc *LabelerService) AllocateTasks(ctx context.Context, req AllocateTasksR
 	if count > req.Number {
 		count = req.Number
 	}
-
-	for i, id := range req.Persons {
-		opts := options.Find().SetProjection(bson.D{{"_id", 1}})
-		if i < len(req.Persons)-1 {
-			opts.SetLimit(count / int64(len(req.Persons)))
-		} else {
-			opts.SetLimit(count/int64(len(req.Persons)) + count%int64(len(req.Persons)))
-		}
-
+	maxCount := count / int64(len(req.Persons))
+	if maxCount < 1 {
+		maxCount = 1
+	}
+	for _, id := range req.Persons {
+		opts := options.Find().SetProjection(bson.D{{"_id", 1}}).SetLimit(maxCount)
 		result, err := svc.CollectionTask.Find(ctx, filter, opts)
 		if err != nil {
 			log.Logger().WithContext(ctx).Error(err.Error())
@@ -576,6 +573,9 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 		if totalCount == int(req.Number) {
 			break
 		}
+	}
+	if totalCount == 0 {
+		return errors.New("分配失败：标注员和审核员不能是同一人")
 	}
 	return nil
 }
