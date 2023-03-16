@@ -158,15 +158,23 @@ func buildFilter(req SearchTaskReq) (bson.M, error) {
 			"$in": req.Status,
 		}
 	}
-	if len(req.Labeler) > 0 {
-		filter["permissions.labeler.id"] = bson.M{
-			"$in": req.Labeler,
+	if len(req.Labeler) > 0 || len(req.Checker) > 0 {
+		bsonA := bson.A{}
+		if len(req.Labeler) > 0 {
+			bsonA = append(bsonA, bson.M{
+				"permissions.labeler.id": bson.M{
+					"$in": req.Labeler,
+				},
+			})
 		}
-	}
-	if len(req.Checker) > 0 {
-		filter["permissions.checker.id"] = bson.M{
-			"$in": req.Checker,
+		if len(req.Checker) > 0 {
+			bsonA = append(bsonA, bson.M{
+				"permissions.checker.id": bson.M{
+					"$in": req.Checker,
+				},
+			})
 		}
+		filter["$or"] = bsonA
 	}
 	if len(req.Name) > 0 {
 		filter["name"] = bson.M{
