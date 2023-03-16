@@ -5,6 +5,7 @@ import (
 	ext "go-admin/config"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"gorm.io/gorm"
 )
 
 var (
@@ -20,13 +21,15 @@ type LabelerService struct {
 	CollectionFolder  *mongo.Collection
 	CollectionSchema  *mongo.Collection
 	CollectionTask    *mongo.Collection
+	GormDB            *gorm.DB
 }
 
-func NewLabelerService(mongodbClient *mongo.Client) *LabelerService {
+func NewLabelerService(mongodbClient *mongo.Client, gormDB *gorm.DB) *LabelerService {
 	cfg := ext.ExtConfig.Mongodb
 	svc := &LabelerService{
 		MongodbClient: mongodbClient,
 		MongodbDB:     mongodbClient.Database(cfg.LabelerDB),
+		GormDB:        gormDB,
 	}
 	svc.CollectionProject = svc.MongodbDB.Collection("project")
 	svc.CollectionFolder = svc.MongodbDB.Collection("folder")
