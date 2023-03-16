@@ -26,6 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
+	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"os/signal"
@@ -67,8 +68,10 @@ func run() error {
 		return nil
 	})
 
+	var gormDB *gorm.DB
 	_ = log.WithTracer(startingCtx, PackageName, "初始化GORM", func(ctx context.Context) error {
-		scrm.GormDB = sdk.Runtime.GetDbByKey("")
+		gormDB = sdk.Runtime.GetDbByKey("")
+		scrm.GormDB = gormDB
 		if err := scrm.GormDB.Use(otelgorm.NewPlugin()); err != nil {
 			scrm.Logger().WithContext(ctx).Fatal(err)
 		}
@@ -94,7 +97,7 @@ func run() error {
 		return nil
 	})
 
-	service := service2.NewLabelerService(mongodbClient)
+	service := service2.NewLabelerService(mongodbClient, gormDB)
 	labelerAPI := api.NewLabelerAPI(service)
 
 	r := gin.New()
