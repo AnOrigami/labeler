@@ -589,8 +589,8 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 }
 
 type SearchMyTaskReq struct {
-	ProjectID primitive.ObjectID `json:"projectId"`
-	UserID    string             `json:"userId"`
+	ProjectID primitive.ObjectID
+	UserID    string
 }
 
 func (svc *LabelerService) SearchMyTask(ctx context.Context, req SearchMyTaskReq) ([]SearchTaskResp, int, error) {

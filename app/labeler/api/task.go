@@ -292,15 +292,16 @@ func (api *LabelerAPI) AllocateCheckTasks() GinHandler {
 
 func (api *LabelerAPI) SearchMyTask() GinHandler {
 	return func(c *gin.Context) {
-		var req service.SearchMyTaskReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
-			response.Error(c, 500, err, "参数异常")
+		oid, err := QueryObjectID(c)
+		if err != nil {
+			response.Error(c, 500, err, "")
 			return
 		}
 		p := actions.GetPermissionFromContext(c)
-		req.UserID = strconv.Itoa(p.UserId)
-
+		req := service.SearchMyTaskReq{
+			ProjectID: oid,
+			UserID:    strconv.Itoa(p.UserId),
+		}
 		resp, total, err := api.LabelerService.SearchMyTask(c.Request.Context(), req)
 		if err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
