@@ -587,3 +587,42 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 	}
 	return nil
 }
+
+type SearchMyTaskReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	UserID    string             `json:"userId"`
+}
+
+func (svc *LabelerService) SearchMyTask(ctx context.Context, req SearchMyTaskReq) ([]SearchTaskResp, int, error) {
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"$or": []bson.M{
+			{"permissions.labeler.id": req.UserID},
+			{"permissions.checker.id": req.UserID},
+		},
+	}
+
+	cursor, err := svc.CollectionTask.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+
+	var tasks []model.Task
+	if err := cursor.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+	results := make([]SearchTaskResp, 0, len(tasks))
+	for i := range tasks {
+		results = append(results, taskToSearchTaskResp(tasks[i]))
+	}
+
+	count, err := svc.CollectionTask.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+
+	return results, int(count), nil
+}
