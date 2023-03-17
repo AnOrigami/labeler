@@ -35,6 +35,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t/comment", api.CommentTask())
 		g.POST("/api/v1/labeler/parse", api.ModelParse())
 		g.POST("/api/v1/labeler/t/checkallocate", api.AllocateCheckTasks())
+		g.GET("/api/v1/labeler/t/my", api.SearchMyTask())
 	}
 }
 
@@ -286,5 +287,26 @@ func (api *LabelerAPI) AllocateCheckTasks() GinHandler {
 			return
 		}
 		response.OK(c, nil, "分配成功")
+	}
+}
+
+func (api *LabelerAPI) SearchMyTask() GinHandler {
+	return func(c *gin.Context) {
+		var req service.SearchMyTaskReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		p := actions.GetPermissionFromContext(c)
+		req.UserID = strconv.Itoa(p.UserId)
+
+		resp, total, err := api.LabelerService.SearchMyTask(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.PageOK(c, resp, total, 1, 10000, "查询成功")
 	}
 }
