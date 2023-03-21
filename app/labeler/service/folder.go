@@ -6,10 +6,11 @@ import (
 	"go-admin/common/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (svc *LabelerService) GetFolders(ctx context.Context) ([]*model.Folder, error) {
-	cursor, err := svc.CollectionFolder.Find(ctx, bson.D{})
+	cursor, err := svc.CollectionFolder.Find(ctx, bson.D{}, options.Find().SetSort(bson.D{{"createTime", -1}}))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error("get folders: ", err.Error())
 		return nil, ErrDatabase

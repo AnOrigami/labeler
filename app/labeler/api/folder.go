@@ -6,7 +6,9 @@ import (
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
 	"go-admin/app/labeler/model"
 	"go-admin/common/log"
+	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 func init() {
@@ -34,6 +36,7 @@ func (api *LabelerAPI) CreateFolder() GinHandler {
 			response.Error(c, 500, nil, "文件夹名不能为空")
 			return
 		}
+		req.CreateTime = util.Datetime(time.Now())
 
 		resp, err := api.LabelerService.CreateFolder(c.Request.Context(), req)
 		if err != nil {
