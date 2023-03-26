@@ -47,6 +47,14 @@ type Permissions struct {
 	Checker *Person `bson:"checker,omitempty" json:"checker"`
 }
 
+func (p Permissions) IsLabeler(id string) bool {
+	return p.Labeler != nil && p.Labeler.ID == id
+}
+
+func (p Permissions) IsChecker(id string) bool {
+	return p.Checker != nil && p.Checker.ID == id
+}
+
 type Person struct {
 	ID string `bson:"id" json:"id"`
 }

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
+	"github.com/xuri/excelize/v2"
 	"go-admin/app/labeler/service"
 	"go-admin/common/actions"
 	"go-admin/common/log"
@@ -71,4 +73,20 @@ func ReadFileHeader(fh *multipart.FileHeader) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func ReadFileHeaderExcel(fh *multipart.FileHeader) ([][]string, error) {
+	f, err := fh.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	excelFile, err := excelize.OpenReader(f)
+	if err != nil {
+		return nil, err
+	}
+	if excelFile.SheetCount <= 0 {
+		return nil, errors.New("读取excel文件表失败")
+	}
+	return excelFile.GetRows(excelFile.GetSheetName(0))
 }
