@@ -1,8 +1,10 @@
 package service
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +19,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -625,4 +628,65 @@ func (svc *LabelerService) SearchMyTask(ctx context.Context, req SearchMyTaskReq
 	}
 
 	return results, int(count), nil
+}
+
+type DownloadTaskReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Status    []string           `json:"status"`
+}
+
+type DownloadTaskResp struct {
+	File     *string `json:"file"`
+	FileName string  `json:"filename"`
+}
+
+func (svc *LabelerService) DownloadTask(ctx context.Context, req DownloadTaskReq) (DownloadTaskResp, error) {
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"status": bson.M{
+			"$in": req.Status,
+		},
+	}
+	cursor, err := svc.CollectionTask.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTaskResp{}, err
+	}
+
+	var tasks []model.Task
+	if err := cursor.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTaskResp{}, err
+	}
+
+	nameStr := time.Now().Format("2006-01-02 15-04-05") + "下载文件.zip"
+	buf := new(bytes.Buffer)
+
+	zipWriter := zip.NewWriter(buf)
+
+	for _, task := range tasks {
+		data, err := json.Marshal(task)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return DownloadTaskResp{}, err
+		}
+		taskName := strings.Split(task.Name, ".")
+		w1, err := zipWriter.Create(taskName[0] + ".json")
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return DownloadTaskResp{}, err
+		}
+		_, err = w1.Write(data)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return DownloadTaskResp{}, err
+		}
+	}
+	if err = zipWriter.Close(); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTaskResp{}, err
+	}
+
+	res := base64.StdEncoding.EncodeToString(buf.Bytes())
+	return DownloadTaskResp{File: &res, FileName: nameStr}, nil
 }

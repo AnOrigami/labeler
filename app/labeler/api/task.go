@@ -36,6 +36,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/parse", api.ModelParse())
 		g.POST("/api/v1/labeler/t/checkallocate", api.AllocateCheckTasks())
 		g.GET("/api/v1/labeler/t/my", api.SearchMyTask())
+		g.POST("/api/v1/labeler/t/download", api.DownloadTask())
 	}
 }
 
@@ -309,5 +310,30 @@ func (api *LabelerAPI) SearchMyTask() GinHandler {
 			return
 		}
 		response.PageOK(c, resp, total, 1, 10000, "查询成功")
+	}
+}
+
+func (api *LabelerAPI) DownloadTask() GinHandler {
+	return func(c *gin.Context) {
+		var req service.DownloadTaskReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ProjectID.IsZero() {
+			response.Error(c, 500, nil, "项目id不能为空")
+			return
+		}
+		if len(req.Status) == 0 {
+			response.Error(c, 500, nil, "状态不能为空")
+			return
+		}
+		resp, err := api.LabelerService.DownloadTask(c.Request.Context(), req)
+		if err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "下载成功")
 	}
 }
