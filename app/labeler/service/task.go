@@ -82,7 +82,6 @@ type SearchTaskReq struct {
 	UpdateTimeStart string             `json:"updateTimeStart"`
 	UpdateTimeEnd   string             `json:"updateTimeEnd"`
 	PType           string             `json:"pType"`
-	SortAsc         bool               `json:"sortAsc"`
 
 	UserID    int
 	DataScope string
@@ -139,12 +138,8 @@ func buildOptions(req SearchTaskReq) *options.FindOptions {
 	}
 	opts := options.Find().
 		SetLimit(int64(req.PageSize)).
-		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
-	sortValue := -1
-	if req.SortAsc {
-		sortValue = 1
-	}
-	opts.SetSort(bson.D{{"updateTime", sortValue}})
+		SetSkip(int64((req.PageIndex - 1) * req.PageSize)).
+		SetSort(bson.D{{"_id", 1}})
 	return opts
 }
 
