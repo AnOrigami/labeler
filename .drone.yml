@@ -2,6 +2,9 @@ kind: pipeline
 type: docker
 name: default
 
+clone:
+  retries: 10
+
 steps:
   - name: build
     image: harbor.blauwelle.com/deepies/go-build:v1.0.3
