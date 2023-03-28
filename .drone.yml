@@ -4,13 +4,13 @@ name: default
 
 steps:
   - name: build
-    image: harbor.blauwelle.com/deepies/go-build:v1.0.2
+    image: harbor.blauwelle.com/deepies/go-build:v1.0.3
     environment:
       GIT_SSH_KEY:
         from_secret: GIT_SSH_KEY
     commands:
       - /usr/local/bin/init-ssh-key
-      - go mod download
+      - retry -c 10 -i 2s -- go mod download
       - mkdir -p build
       - CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s" -o build/go-admin ./
       - /usr/local/bin/create-tags
