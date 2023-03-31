@@ -4,15 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-admin/app/labeler/model"
-	"go-admin/common/log"
-	"go-admin/common/util"
+	"math"
+	"strconv"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"math"
-	"time"
+
+	"go-admin/app/admin/models"
+	"go-admin/app/labeler/model"
+	"go-admin/common/log"
+	"go-admin/common/util"
 )
 
 type UploadTask2Req struct {
@@ -103,16 +107,50 @@ func (svc *LabelerService) SearchTask2(ctx context.Context, req SearchTask2Req) 
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
 	}
-	results := make([]SearchTask2Resp, len(tasks))
+	results := svc.tasksToSearchTask2Resp(ctx, tasks)
+
+	count, err := svc.CollectionTask2.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+
+	return results, int(count), nil
+}
+
+func (svc *LabelerService) tasksToSearchTask2Resp(ctx context.Context, tasks []model.Task2) []SearchTask2Resp {
+	ids := make([]string, 0)
+	for _, task := range tasks {
+		if task.Permissions.Labeler != nil {
+			ids = append(ids, task.Permissions.Labeler.ID)
+		}
+		if task.Permissions.Checker != nil {
+			ids = append(ids, task.Permissions.Checker.ID)
+		}
+	}
+
+	res := make([]SearchTask2Resp, len(tasks))
+
+	var users []models.SysUser
+	if len(ids) > 0 {
+		db := svc.GormDB.WithContext(ctx).Find(&users).Select("user_id, username").Where("user_id in ?", ids)
+		if err := db.Error; err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+		}
+	}
+	userMap := make(map[string]string)
+	for _, v := range users {
+		userMap[strconv.Itoa(v.UserId)] = v.Username
+	}
 	for i, task := range tasks {
 		var labeler, checker string
 		if task.Permissions.Labeler != nil {
-			labeler = task.Permissions.Labeler.ID
+			labeler = userMap[task.Permissions.Labeler.ID]
 		}
 		if task.Permissions.Checker != nil {
-			checker = task.Permissions.Checker.ID
+			checker = userMap[task.Permissions.Checker.ID]
 		}
-		results[i] = SearchTask2Resp{
+		res[i] = SearchTask2Resp{
 			ID:         task.ID,
 			ProjectID:  task.ProjectID,
 			Status:     task.Status,
@@ -122,15 +160,9 @@ func (svc *LabelerService) SearchTask2(ctx context.Context, req SearchTask2Req) 
 			Contents:   task.Contents,
 			Labels:     task.Labels,
 		}
-	}
 
-	count, err := svc.CollectionTask2.CountDocuments(ctx, filter)
-	if err != nil {
-		log.Logger().WithContext(ctx).Error(err.Error())
-		return nil, 0, err
 	}
-
-	return results, int(count), nil
+	return res
 }
 
 type Task2BatchAllocLabelerReq struct {

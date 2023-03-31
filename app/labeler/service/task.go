@@ -18,7 +18,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"gorm.io/gorm"
 
 	"go-admin/app/admin/models"
 	"go-admin/app/labeler/model"
@@ -119,10 +118,7 @@ func (svc *LabelerService) SearchTask(ctx context.Context, req SearchTaskReq) ([
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
 	}
-	results := make([]SearchTaskResp, 0, len(tasks))
-	for i := range tasks {
-		results = append(results, svc.taskToSearchTaskResp(ctx, tasks[i]))
-	}
+	results := svc.tasksToSearchTaskResp(ctx, tasks)
 
 	count, err := svc.CollectionTask.CountDocuments(ctx, filter)
 	if err != nil {
@@ -220,54 +216,49 @@ func buildFilter(req SearchTaskReq) (bson.M, error) {
 	return filter, nil
 }
 
-func (svc *LabelerService) taskToSearchTaskResp(ctx context.Context, task model.Task) SearchTaskResp {
-	var labelerName, checkerName string
-	if task.Permissions.Labeler != nil {
-		var user models.SysUser
-		id, err := strconv.Atoi(task.Permissions.Labeler.ID)
-		if err != nil {
+func (svc *LabelerService) tasksToSearchTaskResp(ctx context.Context, tasks []model.Task) []SearchTaskResp {
+	ids := make([]string, 0)
+	for _, task := range tasks {
+		if task.Permissions.Labeler != nil {
+			ids = append(ids, task.Permissions.Labeler.ID)
+		}
+		if task.Permissions.Checker != nil {
+			ids = append(ids, task.Permissions.Checker.ID)
+		}
+	}
+
+	res := make([]SearchTaskResp, len(tasks))
+
+	var users []models.SysUser
+	if len(ids) > 0 {
+		db := svc.GormDB.WithContext(ctx).Find(&users).Select("user_id, username").Where("user_id in ?", ids)
+		if err := db.Error; err != nil {
 			log.Logger().WithContext(ctx).Error(err.Error())
-			return SearchTaskResp{}
-		}
-		err = svc.GormDB.WithContext(ctx).First(&user, id).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				labelerName = "该用户已注销"
-			} else {
-				log.Logger().WithContext(ctx).Error(err.Error())
-				return SearchTaskResp{}
-			}
-		} else {
-			labelerName = user.NickName
 		}
 	}
-	if task.Permissions.Checker != nil {
-		var user models.SysUser
-		id, err := strconv.Atoi(task.Permissions.Checker.ID)
-		if err != nil {
-			log.Logger().WithContext(ctx).Error(err.Error())
-			return SearchTaskResp{}
-		}
-		err = svc.GormDB.WithContext(ctx).First(&user, id).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				checkerName = "该用户已注销"
-			} else {
-				log.Logger().WithContext(ctx).Error(err.Error())
-				return SearchTaskResp{}
-			}
-		} else {
-			checkerName = user.NickName
-		}
+	userMap := make(map[string]string)
+	for _, v := range users {
+		userMap[strconv.Itoa(v.UserId)] = v.Username
 	}
-	return SearchTaskResp{
-		ID:         task.ID,
-		Name:       task.Name,
-		Status:     task.Status,
-		Labeler:    labelerName,
-		Checker:    checkerName,
-		UpdateTime: task.UpdateTime,
+	for i, task := range tasks {
+		var labeler, checker string
+		if task.Permissions.Labeler != nil {
+			labeler = userMap[task.Permissions.Labeler.ID]
+		}
+		if task.Permissions.Checker != nil {
+			checker = userMap[task.Permissions.Checker.ID]
+		}
+		res[i] = SearchTaskResp{
+			ID:         task.ID,
+			Name:       task.Name,
+			Status:     task.Status,
+			Labeler:    labeler,
+			Checker:    checker,
+			UpdateTime: task.UpdateTime,
+		}
+
 	}
+	return res
 }
 
 func (svc *LabelerService) GetTask(ctx context.Context, id primitive.ObjectID) (model.Task, error) {
@@ -660,10 +651,7 @@ func (svc *LabelerService) SearchMyTask(ctx context.Context, req SearchMyTaskReq
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
 	}
-	results := make([]SearchTaskResp, 0, len(tasks))
-	for i := range tasks {
-		results = append(results, svc.taskToSearchTaskResp(ctx, tasks[i]))
-	}
+	results := svc.tasksToSearchTaskResp(ctx, tasks)
 
 	count, err := svc.CollectionTask.CountDocuments(ctx, filter)
 	if err != nil {
