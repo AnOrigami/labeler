@@ -2,10 +2,16 @@ package api
 
 import (
 	"context"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth/user"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"go-admin/app/admin/models"
 	"go-admin/app/labeler/model"
 	"go-admin/app/labeler/service"
@@ -13,10 +19,6 @@ import (
 	"go-admin/common/actions"
 	"go-admin/common/log"
 	"go-admin/common/util"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 func init() {
@@ -293,16 +295,21 @@ func (api *LabelerAPI) AllocateCheckTasks() GinHandler {
 
 func (api *LabelerAPI) SearchMyTask() GinHandler {
 	return func(c *gin.Context) {
-		oid, err := QueryObjectID(c)
+		var req service.SearchMyTaskReq
+		if err := c.ShouldBindQuery(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		oid, err := primitive.ObjectIDFromHex(req.ID)
 		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "")
 			return
 		}
+		req.ProjectID = oid
 		p := actions.GetPermissionFromContext(c)
-		req := service.SearchMyTaskReq{
-			ProjectID: oid,
-			UserID:    strconv.Itoa(p.UserId),
-		}
+		req.UserID = strconv.Itoa(p.UserId)
 		resp, total, err := api.LabelerService.SearchMyTask(c.Request.Context(), req)
 		if err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())

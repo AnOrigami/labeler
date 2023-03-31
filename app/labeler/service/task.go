@@ -8,19 +8,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go-admin/app/labeler/model"
-	"go-admin/common/dto"
-	"go-admin/common/log"
-	"go-admin/common/util"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"go-admin/app/labeler/model"
+	"go-admin/common/dto"
+	"go-admin/common/log"
+	"go-admin/common/util"
 )
 
 const (
@@ -588,16 +590,24 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 
 type SearchMyTaskReq struct {
 	ProjectID primitive.ObjectID
+	ID        string `form:"id"`
 	UserID    string
+	TaskType  string `form:"taskType"`
 }
 
 func (svc *LabelerService) SearchMyTask(ctx context.Context, req SearchMyTaskReq) ([]SearchTaskResp, int, error) {
 	filter := bson.M{
 		"projectId": req.ProjectID,
-		"$or": []bson.M{
+	}
+	if req.TaskType == "标注" {
+		filter["permissions.labeler.id"] = req.UserID
+	} else if req.TaskType == "审核" {
+		filter["permissions.checker.id"] = req.UserID
+	} else {
+		filter["$or"] = []bson.M{
 			{"permissions.labeler.id": req.UserID},
 			{"permissions.checker.id": req.UserID},
-		},
+		}
 	}
 
 	cursor, err := svc.CollectionTask.Find(ctx, filter)
