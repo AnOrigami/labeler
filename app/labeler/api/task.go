@@ -37,7 +37,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t/comment", api.CommentTask())
 		g.POST("/api/v1/labeler/parse", api.ModelParse())
 		g.POST("/api/v1/labeler/t/checkallocate", api.AllocateCheckTasks())
-		g.GET("/api/v1/labeler/t/my", api.SearchMyTask())
+		g.POST("/api/v1/labeler/t/my", api.SearchMyTask())
 		g.POST("/api/v1/labeler/t/download", api.DownloadTask())
 	}
 }
@@ -296,18 +296,11 @@ func (api *LabelerAPI) AllocateCheckTasks() GinHandler {
 func (api *LabelerAPI) SearchMyTask() GinHandler {
 	return func(c *gin.Context) {
 		var req service.SearchMyTaskReq
-		if err := c.ShouldBindQuery(&req); err != nil {
+		if err := c.ShouldBindJSON(&req); err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "参数异常")
 			return
 		}
-		oid, err := primitive.ObjectIDFromHex(req.ID)
-		if err != nil {
-			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
-			response.Error(c, 500, err, "")
-			return
-		}
-		req.ProjectID = oid
 		p := actions.GetPermissionFromContext(c)
 		req.UserID = strconv.Itoa(p.UserId)
 		resp, total, err := api.LabelerService.SearchMyTask(c.Request.Context(), req)
