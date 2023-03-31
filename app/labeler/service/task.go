@@ -231,14 +231,14 @@ func (svc *LabelerService) tasksToSearchTaskResp(ctx context.Context, tasks []mo
 
 	var users []models.SysUser
 	if len(ids) > 0 {
-		db := svc.GormDB.WithContext(ctx).Find(&users).Select("user_id, username").Where("user_id in ?", ids)
+		db := svc.GormDB.WithContext(ctx).Find(&users).Select("user_id, nick_name").Where("user_id in ?", ids)
 		if err := db.Error; err != nil {
 			log.Logger().WithContext(ctx).Error(err.Error())
 		}
 	}
 	userMap := make(map[string]string)
 	for _, v := range users {
-		userMap[strconv.Itoa(v.UserId)] = v.Username
+		userMap[strconv.Itoa(v.UserId)] = v.NickName
 	}
 	for i, task := range tasks {
 		var labeler, checker string
