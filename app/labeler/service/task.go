@@ -263,6 +263,8 @@ func (svc *LabelerService) tasksToSearchTaskResp(ctx context.Context, tasks []mo
 
 func (svc *LabelerService) GetTask(ctx context.Context, id primitive.ObjectID) (model.Task, error) {
 	var task model.Task
+	var users []models.SysUser
+	ids := make([]string, 0)
 	if err := svc.CollectionTask.FindOne(ctx, bson.D{{"_id", id}}).Decode(&task); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return model.Task{}, ErrNoDoc
@@ -271,6 +273,28 @@ func (svc *LabelerService) GetTask(ctx context.Context, id primitive.ObjectID) (
 		return model.Task{}, err
 	}
 
+	if task.Permissions.Labeler != nil {
+		ids = append(ids, task.Permissions.Labeler.ID)
+	}
+	if task.Permissions.Checker != nil {
+		ids = append(ids, task.Permissions.Checker.ID)
+	}
+	if len(ids) > 0 {
+		db := svc.GormDB.WithContext(ctx).Find(&users).Select("user_id, nick_name").Where("user_id in ?", ids)
+		if err := db.Error; err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+		}
+	}
+	userMap := make(map[string]string)
+	for _, v := range users {
+		userMap[strconv.Itoa(v.UserId)] = v.NickName
+	}
+	if task.Permissions.Labeler != nil {
+		task.Permissions.Labeler.NickName = userMap[task.Permissions.Labeler.ID]
+	}
+	if task.Permissions.Checker != nil {
+		task.Permissions.Checker.NickName = userMap[task.Permissions.Checker.ID]
+	}
 	return task, nil
 }
 

@@ -1,8 +1,9 @@
 package model
 
 import (
-	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"go-admin/common/util"
 )
 
 const (
@@ -56,7 +57,8 @@ func (p Permissions) IsChecker(id string) bool {
 }
 
 type Person struct {
-	ID string `bson:"id" json:"id"`
+	ID       string `bson:"id" json:"id"`
+	NickName string `json:"nickName"`
 }
 
 type Tuple struct {
