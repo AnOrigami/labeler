@@ -452,3 +452,47 @@ func (svc *LabelerService) BatchSetTask2Status(ctx context.Context, req BatchSet
 	}
 	return BatchSetTask2StatusResp{Count: result.ModifiedCount}, err
 }
+
+type SearchMyTask2Req = SearchMyTaskReq
+
+func (svc *LabelerService) SearchMyTask2(ctx context.Context, req SearchMyTask2Req) ([]SearchTask2Resp, int, error) {
+	filter := bson.M{
+		"projectId": req.ID,
+	}
+	if len(req.Status) != 0 {
+		filter["status"] = bson.M{
+			"$in": req.Status,
+		}
+	}
+	if req.TaskType == "标注" {
+		filter["permissions.labeler.id"] = req.UserID
+	} else if req.TaskType == "审核" {
+		filter["permissions.checker.id"] = req.UserID
+	} else {
+		filter["$or"] = []bson.M{
+			{"permissions.labeler.id": req.UserID},
+			{"permissions.checker.id": req.UserID},
+		}
+	}
+
+	cursor, err := svc.CollectionTask2.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+
+	var tasks []model.Task2
+	if err := cursor.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+	results := svc.tasksToSearchTask2Resp(ctx, tasks)
+
+	count, err := svc.CollectionTask2.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return nil, 0, err
+	}
+
+	return results, int(count), nil
+}
