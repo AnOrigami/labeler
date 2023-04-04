@@ -222,7 +222,7 @@ func (api *LabelerAPI) BatchSetTask2Status() GinHandler {
 
 func (api *LabelerAPI) SearchMyTask2() GinHandler {
 	return func(c *gin.Context) {
-		var req service.SearchMyTaskReq
+		var req service.SearchMyTask2Req
 		if err := c.ShouldBindJSON(&req); err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "参数异常")
@@ -236,6 +236,6 @@ func (api *LabelerAPI) SearchMyTask2() GinHandler {
 			response.Error(c, 500, err, "")
 			return
 		}
-		response.PageOK(c, resp, total, 1, 10000, "查询成功")
+		response.PageOK(c, resp, total, req.PageIndex, req.PageSize, "查询成功")
 	}
 }
