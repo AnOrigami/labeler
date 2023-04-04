@@ -15,6 +15,7 @@ import (
 
 	"go-admin/app/admin/models"
 	"go-admin/app/labeler/model"
+	"go-admin/common/dto"
 	"go-admin/common/log"
 	"go-admin/common/util"
 )
@@ -453,7 +454,13 @@ func (svc *LabelerService) BatchSetTask2Status(ctx context.Context, req BatchSet
 	return BatchSetTask2StatusResp{Count: result.ModifiedCount}, err
 }
 
-type SearchMyTask2Req = SearchMyTaskReq
+type SearchMyTask2Req struct {
+	ID       primitive.ObjectID `json:"id"`
+	UserID   string
+	TaskType string   `json:"taskType"`
+	Status   []string `json:"status"`
+	dto.Pagination
+}
 
 func (svc *LabelerService) SearchMyTask2(ctx context.Context, req SearchMyTask2Req) ([]SearchTask2Resp, int, error) {
 	filter := bson.M{
@@ -475,7 +482,7 @@ func (svc *LabelerService) SearchMyTask2(ctx context.Context, req SearchMyTask2R
 		}
 	}
 
-	cursor, err := svc.CollectionTask2.Find(ctx, filter)
+	cursor, err := svc.CollectionTask2.Find(ctx, filter, buildOptions2(req))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -495,4 +502,17 @@ func (svc *LabelerService) SearchMyTask2(ctx context.Context, req SearchMyTask2R
 	}
 
 	return results, int(count), nil
+}
+
+func buildOptions2(req SearchMyTask2Req) *options.FindOptions {
+	if req.PageIndex < 1 {
+		req.PageIndex = 1
+	}
+	if req.PageSize < 1 {
+		req.PageSize = 10
+	}
+	opts := options.Find().
+		SetLimit(int64(req.PageSize)).
+		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
+	return opts
 }
