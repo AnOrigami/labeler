@@ -31,7 +31,7 @@ func task2AuthRouter() RouterCheckRole {
 		g.PUT("/api/v1/labeler/t2/", api.UpdateTask2())
 		g.POST("/api/v1/labeler/t2/batch/status", api.BatchSetTask2Status())
 		g.POST("/api/v1/labeler/t2/my", api.SearchMyTask2())
-		g.DELETE("/api/v1/labeler/t2/delete", api.DeleteTask2())
+		g.DELETE("/api/v1/labeler/t2/", api.DeleteTask2())
 	}
 }
 
