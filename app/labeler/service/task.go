@@ -746,3 +746,11 @@ func (svc *LabelerService) DownloadTask(ctx context.Context, req DownloadTaskReq
 	res := base64.StdEncoding.EncodeToString(buf.Bytes())
 	return DownloadTaskResp{File: &res, FileName: nameStr}, nil
 }
+
+func (svc *LabelerService) DeleteTask(ctx context.Context, id primitive.ObjectID) error {
+	if _, err := svc.CollectionTask.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
+		log.Logger().WithContext(ctx).Error("delete task: ", err.Error())
+		return err
+	}
+	return nil
+}

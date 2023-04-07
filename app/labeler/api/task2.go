@@ -31,6 +31,7 @@ func task2AuthRouter() RouterCheckRole {
 		g.PUT("/api/v1/labeler/t2/", api.UpdateTask2())
 		g.POST("/api/v1/labeler/t2/batch/status", api.BatchSetTask2Status())
 		g.POST("/api/v1/labeler/t2/my", api.SearchMyTask2())
+		g.DELETE("/api/v1/labeler/t2/delete", api.DeleteTask2())
 	}
 }
 
@@ -237,5 +238,26 @@ func (api *LabelerAPI) SearchMyTask2() GinHandler {
 			return
 		}
 		response.PageOK(c, resp, total, req.PageIndex, req.PageSize, "查询成功")
+	}
+}
+
+func (api *LabelerAPI) DeleteTask2() GinHandler {
+	return func(c *gin.Context) {
+		id := c.Query("id")
+		if len(id) == 0 {
+			response.Error(c, 500, nil, "id不能为空")
+			return
+		}
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+		}
+
+		if err := api.LabelerService.DeleteTask2(c.Request.Context(), objectID); err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, nil, "删除成功")
 	}
 }
