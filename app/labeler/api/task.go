@@ -39,7 +39,7 @@ func taskAuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t/checkallocate", api.AllocateCheckTasks())
 		g.POST("/api/v1/labeler/t/my", api.SearchMyTask())
 		g.POST("/api/v1/labeler/t/download", api.DownloadTask())
-		g.DELETE("/api/v1/labeler/t/delete", api.DeleteTask())
+		g.DELETE("/api/v1/labeler/t/", api.DeleteTask())
 	}
 }
 
