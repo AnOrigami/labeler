@@ -516,3 +516,11 @@ func buildOptions2(req SearchMyTask2Req) *options.FindOptions {
 		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
 	return opts
 }
+
+func (svc *LabelerService) DeleteTask2(ctx context.Context, id primitive.ObjectID) error {
+	if _, err := svc.CollectionTask2.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
+		log.Logger().WithContext(ctx).Error("delete task: ", err.Error())
+		return err
+	}
+	return nil
+}

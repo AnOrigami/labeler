@@ -2,10 +2,12 @@ package service
 
 import (
 	"errors"
-	ext "go-admin/config"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
+
+	ext "go-admin/config"
 )
 
 var (
@@ -23,6 +25,7 @@ type LabelerService struct {
 	CollectionTask     *mongo.Collection
 	CollectionProject2 *mongo.Collection
 	CollectionTask2    *mongo.Collection
+	CollectionFolder2  *mongo.Collection
 	GormDB             *gorm.DB
 }
 
@@ -39,6 +42,7 @@ func NewLabelerService(mongodbClient *mongo.Client, gormDB *gorm.DB) *LabelerSer
 	svc.CollectionTask = svc.MongodbDB.Collection("task")
 	svc.CollectionProject2 = svc.MongodbDB.Collection("project2")
 	svc.CollectionTask2 = svc.MongodbDB.Collection("task2")
+	svc.CollectionFolder2 = svc.MongodbDB.Collection("folder2")
 	return svc
 }
 

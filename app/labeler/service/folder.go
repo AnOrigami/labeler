@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
-	"go-admin/app/labeler/model"
-	"go-admin/common/log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"go-admin/app/labeler/model"
+	"go-admin/common/log"
 )
 
 func (svc *LabelerService) GetFolders(ctx context.Context) ([]*model.Folder, error) {
