@@ -1,8 +1,9 @@
 package model
 
 import (
-	"go-admin/common/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"go-admin/common/util"
 )
 
 type Task2ContentItem struct {
@@ -17,6 +18,7 @@ type Task2LabelItem struct {
 
 type Task2 struct {
 	ID          primitive.ObjectID `bson:"_id" json:"id"`
+	Name        string             `bson:"name" json:"name"`
 	ProjectID   primitive.ObjectID `bson:"projectId" json:"projectId"`
 	Status      string             `bson:"status" json:"status"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`

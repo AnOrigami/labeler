@@ -21,12 +21,17 @@ import (
 )
 
 type UploadTask2Req struct {
-	Rows      [][]string
+	Rows      []Task2FileRow
 	ProjectID primitive.ObjectID
 }
 
 type UploadTask2Resp struct {
 	UploadCount int `json:"uploadCount"`
+}
+
+type Task2FileRow struct {
+	Name string
+	Data []string
 }
 
 func (svc *LabelerService) UploadTask2(ctx context.Context, req UploadTask2Req) (UploadTask2Resp, error) {
@@ -51,16 +56,17 @@ func (svc *LabelerService) UploadTask2(ctx context.Context, req UploadTask2Req) 
 	tasks := make([]any, len(req.Rows))
 	now := util.Datetime(time.Now())
 	for i, row := range req.Rows {
-		row := util.DefaultSlice[string](row)
+		data := util.DefaultSlice[string](row.Data)
 		contents := make([]model.Task2ContentItem, len(project.Schema.ContentTypes))
 		for contentTypeIndex, contentType := range project.Schema.ContentTypes {
 			contents[contentTypeIndex] = model.Task2ContentItem{
 				Name:  contentType,
-				Value: row.At(contentTypeIndex),
+				Value: data.At(contentTypeIndex),
 			}
 		}
 		tasks[i] = model.Task2{
 			ID:          primitive.NewObjectID(),
+			Name:        row.Name,
 			ProjectID:   req.ProjectID,
 			Status:      model.TaskStatusAllocate,
 			Permissions: model.Permissions{},
@@ -82,6 +88,7 @@ type SearchTask2Req = SearchTaskReq
 type SearchTask2Resp struct {
 	ID         primitive.ObjectID       `json:"id"`
 	ProjectID  primitive.ObjectID       `json:"projectId"`
+	Name       string                   `json:"name"`
 	Status     string                   `json:"status"`
 	Labeler    string                   `json:"labeler"`
 	Checker    string                   `json:"checker"`
@@ -154,6 +161,7 @@ func (svc *LabelerService) tasksToSearchTask2Resp(ctx context.Context, tasks []m
 		res[i] = SearchTask2Resp{
 			ID:         task.ID,
 			ProjectID:  task.ProjectID,
+			Name:       task.Name,
 			Status:     task.Status,
 			Labeler:    labeler,
 			Checker:    checker,

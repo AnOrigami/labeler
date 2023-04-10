@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
@@ -50,8 +51,9 @@ func (api *LabelerAPI) UploadTask2() GinHandler {
 			response.Error(c, 400, err, "")
 			return
 		}
+
 		req := service.UploadTask2Req{
-			Rows:      make([][]string, 0),
+			Rows:      make([]service.Task2FileRow, 0),
 			ProjectID: projectID,
 		}
 		for _, fh := range files {
@@ -61,7 +63,16 @@ func (api *LabelerAPI) UploadTask2() GinHandler {
 				response.Error(c, 500, err, "")
 				return
 			}
-			req.Rows = append(req.Rows, rows...)
+			prefix := strings.Split(fh.Filename, ".")[0]
+			for i, row := range rows {
+				if i == 0 {
+					continue
+				}
+				req.Rows = append(req.Rows, service.Task2FileRow{
+					Name: prefix + strconv.Itoa(i),
+					Data: row,
+				})
+			}
 		}
 		resp, err := api.LabelerService.UploadTask2(c.Request.Context(), req)
 		if err != nil {
