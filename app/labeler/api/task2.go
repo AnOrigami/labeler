@@ -228,7 +228,7 @@ func (api *LabelerAPI) BatchSetTask2Status() GinHandler {
 			response.Error(c, 500, err, "")
 			return
 		}
-		response.OK(c, resp, "更新成功")
+		response.OK(c, resp, service.ResponseMap[req.Status])
 	}
 }
 
