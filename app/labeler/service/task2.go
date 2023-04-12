@@ -422,8 +422,8 @@ func (svc *LabelerService) UpdateTask2(ctx context.Context, req UpdateTask2Req) 
 var ResponseMap = map[string]string{
 	"未分配":   "更新成功",
 	"待标注":   "更新成功",
-	"已提交":   "更新成功",
-	"待审核":   "提交成功",
+	"已提交":   "提交成功",
+	"待审核":   "更新成功",
 	"已审核":   "已通过",
 	"审核不通过": "更新成功",
 }
