@@ -69,7 +69,7 @@ func (api *LabelerAPI) UploadTask2() GinHandler {
 					continue
 				}
 				req.Rows = append(req.Rows, service.Task2FileRow{
-					Name: prefix + strconv.Itoa(i),
+					Name: prefix + "-" + strconv.Itoa(i),
 					Data: row,
 				})
 			}
