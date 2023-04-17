@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
+
 	"go-admin/app/labeler/model"
 	"go-admin/app/labeler/service"
 	"go-admin/common/log"
@@ -31,7 +32,10 @@ func (api *LabelerAPI) CreateProject2() GinHandler {
 			response.Error(c, 400, err, "")
 			return
 		}
-
+		if project.FolderID.IsZero() {
+			response.Error(c, 500, nil, "文件夹ID不能为空")
+			return
+		}
 		resp, err := api.LabelerService.CreateProject2(c.Request.Context(), project)
 		if err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
