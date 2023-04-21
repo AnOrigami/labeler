@@ -80,7 +80,7 @@ func (api *LabelerAPI) UploadTask2() GinHandler {
 			response.Error(c, 500, err, "")
 			return
 		}
-		response.OK(c, resp, "")
+		response.OK(c, resp, "上传成功")
 	}
 }
 
