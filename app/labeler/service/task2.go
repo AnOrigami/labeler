@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -540,4 +541,78 @@ func (svc *LabelerService) DeleteTask2(ctx context.Context, id primitive.ObjectI
 		return err
 	}
 	return nil
+}
+
+type DownloadTask2Req struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Status    []string           `json:"status"`
+}
+
+type DownloadTask2Resp struct {
+	File     *string `json:"file"`
+	FileName string  `json:"filename"`
+}
+
+func (svc *LabelerService) DownloadTask2(ctx context.Context, req DownloadTask2Req) (DownloadTask2Resp, error) {
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"status": bson.M{
+			"$in": req.Status,
+		},
+	}
+	cursor, err := svc.CollectionTask2.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+
+	var tasks []*model.Task2
+	if err := cursor.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+
+	var project model.Project2
+	err = svc.CollectionProject2.FindOne(ctx, bson.D{{"_id", req.ProjectID}}).Decode(&project)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+	columns := []string{"序号", "任务id", "任务名", "状态"}
+	for _, v := range project.Schema.ContentTypes {
+		columns = append(columns, v)
+	}
+	for _, v := range project.Schema.Labels {
+		columns = append(columns, v.Name)
+	}
+	nameStr := project.Name + " " + strings.Join(req.Status, "/") + " "
+	data, filename, err := util.CreateExcelFile(
+		task2ToSlice(tasks),
+		columns,
+		nameStr,
+	)
+	if err != nil {
+		return DownloadTask2Resp{}, err
+	}
+	return DownloadTask2Resp{File: data, FileName: filename}, nil
+}
+
+func task2ToSlice(tasks []*model.Task2) [][]interface{} {
+	var res [][]interface{}
+	for index, task := range tasks {
+		s := []interface{}{
+			index + 1,
+			task.ID.Hex(),
+			task.Name,
+			task.Status,
+		}
+		for _, v := range task.Contents {
+			s = append(s, v.Value)
+		}
+		for _, v := range task.Labels {
+			s = append(s, v.Value)
+		}
+		res = append(res, s)
+	}
+	return res
 }
