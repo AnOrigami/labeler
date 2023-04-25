@@ -33,6 +33,7 @@ func task2AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t2/batch/status", api.BatchSetTask2Status())
 		g.POST("/api/v1/labeler/t2/my", api.SearchMyTask2())
 		g.DELETE("/api/v1/labeler/t2/", api.DeleteTask2())
+		g.POST("/api/v1/labeler/t2/download", api.DownloadTask2())
 	}
 }
 
@@ -270,5 +271,30 @@ func (api *LabelerAPI) DeleteTask2() GinHandler {
 			return
 		}
 		response.OK(c, nil, "删除成功")
+	}
+}
+
+func (api *LabelerAPI) DownloadTask2() GinHandler {
+	return func(c *gin.Context) {
+		var req service.DownloadTask2Req
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ProjectID.IsZero() {
+			response.Error(c, 500, nil, "项目id不能为空")
+			return
+		}
+		if len(req.Status) == 0 {
+			response.Error(c, 500, nil, "状态不能为空")
+			return
+		}
+		resp, err := api.LabelerService.DownloadTask2(c.Request.Context(), req)
+		if err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "下载成功")
 	}
 }
