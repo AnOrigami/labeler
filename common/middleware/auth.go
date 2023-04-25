@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-admin-team/go-admin-core/sdk/config"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
+
 	"go-admin/common/middleware/handler"
 )
 
@@ -31,6 +32,6 @@ func AuthInit() (*jwt.GinJWTMiddleware, error) {
 		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
 		TokenHeadName:   "Bearer",
 		TimeFunc:        time.Now,
-		SendCookie:      true,
+		SendCookie:      false,
 	})
 }
