@@ -471,7 +471,7 @@ func (svc *LabelerService) BatchSetTask2Status(ctx context.Context, req BatchSet
 		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
 		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
 		model.TaskStatusChecking: {model.TaskStatusSubmit},
-		model.TaskStatusSubmit:   {model.TaskStatusLabeling},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusSubmit},
 	}
 	update := bson.M{
 		"$set": bson.M{
@@ -490,6 +490,9 @@ func (svc *LabelerService) BatchSetTask2Status(ctx context.Context, req BatchSet
 		return BatchSetTask2StatusResp{}, err
 	}
 	if int(result.ModifiedCount) < len(req.IDs) {
+		if req.Status == model.TaskStatusSubmit {
+			return BatchSetTask2StatusResp{}, errors.New("提交失败：任务已被分配审核")
+		}
 		return BatchSetTask2StatusResp{}, errors.New("部分任务状态没有修改")
 	}
 	return BatchSetTask2StatusResp{Count: result.ModifiedCount}, err
