@@ -467,19 +467,30 @@ func (svc *LabelerService) BatchSetTask2Status(ctx context.Context, req BatchSet
 			bson.M{"permissions.checker.id": req.UserID},
 		}
 	}
+	statusMap := map[string][]string{
+		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusChecking: {model.TaskStatusSubmit},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling},
+	}
 	update := bson.M{
 		"$set": bson.M{
 			"status":     req.Status,
 			"updateTime": util.Datetime(time.Now()),
 		},
 	}
+	if validSourceStatus := statusMap[req.Status]; validSourceStatus != nil {
+		filter["status"] = bson.M{
+			"$in": validSourceStatus,
+		}
+	}
 	result, err := svc.CollectionTask2.UpdateMany(ctx, filter, update)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return BatchSetTask2StatusResp{}, err
 	}
-	if result.ModifiedCount == 0 {
-		return BatchSetTask2StatusResp{}, errors.New("权限不足")
+	if int(result.ModifiedCount) < len(req.IDs) {
+		return BatchSetTask2StatusResp{}, errors.New("部分任务状态没有修改")
 	}
 	return BatchSetTask2StatusResp{Count: result.ModifiedCount}, err
 }
