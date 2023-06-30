@@ -26,6 +26,9 @@ type LabelerService struct {
 	CollectionProject2 *mongo.Collection
 	CollectionTask2    *mongo.Collection
 	CollectionFolder2  *mongo.Collection
+	CollectionTask3    *mongo.Collection
+	CollectionProject3 *mongo.Collection
+	CollectionFolder3  *mongo.Collection
 	GormDB             *gorm.DB
 }
 
@@ -43,6 +46,9 @@ func NewLabelerService(mongodbClient *mongo.Client, gormDB *gorm.DB) *LabelerSer
 	svc.CollectionProject2 = svc.MongodbDB.Collection("project2")
 	svc.CollectionTask2 = svc.MongodbDB.Collection("task2")
 	svc.CollectionFolder2 = svc.MongodbDB.Collection("folder2")
+	svc.CollectionTask3 = svc.MongodbDB.Collection("task3")
+	svc.CollectionProject3 = svc.MongodbDB.Collection("project3")
+	svc.CollectionFolder3 = svc.MongodbDB.Collection("folder3")
 	return svc
 }
 
