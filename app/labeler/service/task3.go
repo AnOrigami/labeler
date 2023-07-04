@@ -49,9 +49,9 @@ func (svc *LabelerService) UploadTask3(ctx context.Context, req UploadTask3Req) 
 		return UploadTask3Resp{}, err
 	}
 	commandLabels := make([]model.Label, len(project.Schema.CommandLabels))
-	for i, V := range project.Schema.CommandLabels {
+	for i, v := range project.Schema.CommandLabels {
 		commandLabels[i] = model.Label{
-			Name:  V.Name,
+			Name:  v.Name,
 			Value: "",
 		}
 	}
