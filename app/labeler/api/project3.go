@@ -20,6 +20,7 @@ func project3AuthRouter() RouterCheckRole {
 		g.PUT("/api/v1/labeler/p3/", api.UpdateProject3())
 		g.DELETE("/api/v1/labeler/p3/", api.DeleteProject3())
 		g.POST("/api/v1/labeler/p3/search", api.SearchProject3())
+		g.GET("/api/v1/labeler/p3/count", api.Project3Count())
 	}
 }
 
@@ -96,5 +97,26 @@ func (api *LabelerAPI) SearchProject3() GinHandler {
 			return
 		}
 		response.PageOK(c, resp, total, 1, 10000, "")
+	}
+}
+
+func (api *LabelerAPI) Project3Count() GinHandler {
+	return func(c *gin.Context) {
+		oid, err := QueryObjectID(c)
+		if err != nil {
+			response.Error(c, 400, err, "参数异常")
+			return
+		}
+		if oid.IsZero() {
+			response.Error(c, 400, nil, "项目id不能为空")
+			return
+		}
+		resp, err := api.LabelerService.Project3Count(c.Request.Context(), service.Project3CountReq{ID: oid})
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "")
 	}
 }
