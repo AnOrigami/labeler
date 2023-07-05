@@ -13,14 +13,20 @@ type Task3CommandItem struct {
 
 type CommandRes struct {
 	Labels   []Label    `bson:"labels" json:"labels"`
-	Tags     []string   `bson:"tags" json:"tags"`
+	Tags     Tag        `bson:"tags" json:"tags"`
 	Judgment []Judgment `bson:"judgment" json:"judgment"`
 	Remarks  string     `bson:"remarks" json:"remarks"`
 }
 
 type Label struct {
-	Name  string `bson:"name" json:"name"`
-	Value string `bson:"value" json:"value"`
+	Name    string   `bson:"name" json:"name"`
+	Value   string   `bson:"value" json:"value"`
+	Options []string `bson:"options" json:"options"`
+}
+
+type Tag struct {
+	Values  []string `bson:"values" json:"values"`
+	Options []string `bson:"options" json:"options"`
 }
 
 type Task3OutputItem struct {

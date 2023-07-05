@@ -51,9 +51,13 @@ func (svc *LabelerService) UploadTask3(ctx context.Context, req UploadTask3Req) 
 	commandLabels := make([]model.Label, len(project.Schema.CommandLabels))
 	for i, v := range project.Schema.CommandLabels {
 		commandLabels[i] = model.Label{
-			Name:  v.Name,
-			Value: "",
+			Name:    v.Name,
+			Value:   "",
+			Options: v.Values,
 		}
+	}
+	commandTags := model.Tag{
+		Options: project.Schema.CommandTags,
 	}
 	commandJudgment := make([]model.Judgment, len(project.Schema.CommandJudgment))
 	for i, v := range project.Schema.CommandJudgment {
@@ -93,6 +97,7 @@ func (svc *LabelerService) UploadTask3(ctx context.Context, req UploadTask3Req) 
 		}
 		command.Result.Labels = commandLabels
 		command.Result.Judgment = commandJudgment
+		command.Result.Tags = commandTags
 
 		tasks[i] = model.Task3{
 			ID:          primitive.NewObjectID(),
