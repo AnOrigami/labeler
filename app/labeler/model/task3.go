@@ -33,6 +33,7 @@ type Task3OutputItem struct {
 	Content string    `bson:"content" json:"content"`
 	Result  OutputRes `bson:"result" json:"result"`
 	Skip    bool      `bson:"skip" json:"skip"`
+	Sort    int       `bson:"sort" json:"sort"`
 }
 
 type OutputRes struct {
@@ -51,7 +52,6 @@ type Task3 struct {
 	ProjectID   primitive.ObjectID `bson:"projectId" json:"projectId"`
 	Status      string             `bson:"status" json:"status"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
-	Sort        []int              `bson:"sort" json:"sort"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
 	Command     Task3CommandItem   `bson:"command" json:"command"`
 	Output      []Task3OutputItem  `bson:"output" json:"output"`

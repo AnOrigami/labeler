@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -194,7 +193,6 @@ func (svc *LabelerService) tasksToSearchTask3Resp(ctx context.Context, tasks []m
 			Status:     task.Status,
 			Labeler:    labeler,
 			UpdateTime: task.UpdateTime,
-			Sort:       task.Sort,
 			Command:    task.Command,
 			Output:     task.Output,
 		}
@@ -350,9 +348,6 @@ func (svc *LabelerService) UpdateTask3(ctx context.Context, req UpdateTask3Req) 
 }
 
 func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req UpdateTask3Req) error {
-	if len(UniqueAndAscArr(req.Sort)) != len(task.Output) || UniqueAndAscArr(req.Sort)[0] != 1 || UniqueAndAscArr(req.Sort)[len(task.Output)-1] != len(task.Output) {
-		return errors.New("排序错误")
-	}
 	var project model.Project3
 	if err := svc.CollectionProject3.FindOne(ctx, bson.M{"_id": task.ProjectID}).Decode(&project); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -379,6 +374,9 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 			continue
 		}
 		errStr := fmt.Sprintf("输出%v错误", i+1)
+		if v.Sort < 1 || v.Sort > len(req.Output) {
+			return errors.New(errStr)
+		}
 		if v.Result.Score < 1 || v.Result.Score > 7 {
 			return errors.New(errStr)
 		}
@@ -394,18 +392,18 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 	return nil
 }
 
-func UniqueAndAscArr(m []int) []int {
-	d := make([]int, 0)
-	tempMap := make(map[int]bool, len(m))
-	for _, v := range m {
-		if tempMap[v] == false {
-			tempMap[v] = true
-			d = append(d, v)
-		}
-	}
-	sort.Ints(d[:])
-	return d
-}
+//func UniqueAndAscArr(m []int) []int {
+//	d := make([]int, 0)
+//	tempMap := make(map[int]bool, len(m))
+//	for _, v := range m {
+//		if tempMap[v] == false {
+//			tempMap[v] = true
+//			d = append(d, v)
+//		}
+//	}
+//	sort.Ints(d[:])
+//	return d
+//}
 
 type BatchSetTask3StatusReq struct {
 	UserID        string               `json:"-"`
