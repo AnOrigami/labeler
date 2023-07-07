@@ -310,7 +310,6 @@ type UpdateTask3Req struct {
 	UserID        string                  `json:"-"`
 	UserDataScope string                  `json:"-"`
 	ID            primitive.ObjectID      `json:"id"`
-	Sort          []int                   `json:"sort"`
 	Command       model.Task3CommandItem  `json:"command"`
 	Output        []model.Task3OutputItem `json:"output"`
 }
@@ -335,8 +334,8 @@ func (svc *LabelerService) UpdateTask3(ctx context.Context, req UpdateTask3Req) 
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
 		"$set": bson.M{
-			"contents":   task.Command,
-			"labels":     task.Output,
+			"command":    task.Command,
+			"output":     task.Output,
 			"updateTime": task.UpdateTime,
 		},
 	}
@@ -370,12 +369,12 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 		return errors.New("指令错误")
 	}
 	for i, v := range req.Output {
-		if v.Skip {
-			continue
-		}
 		errStr := fmt.Sprintf("输出%v错误", i+1)
 		if v.Sort < 1 || v.Sort > len(req.Output) {
 			return errors.New(errStr)
+		}
+		if v.Skip {
+			continue
 		}
 		if v.Result.Score < 1 || v.Result.Score > 7 {
 			return errors.New(errStr)
