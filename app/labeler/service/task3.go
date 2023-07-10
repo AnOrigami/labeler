@@ -365,9 +365,6 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 			return errors.New("指令未完成标注")
 		}
 	}
-	if req.Command.Result.Remarks == "" {
-		return errors.New("指令未完成标注")
-	}
 	for i, v := range req.Output {
 		errStr := fmt.Sprintf("输出%v未完成标注", i+1)
 		if v.Sort < 1 || v.Sort > len(req.Output) {
@@ -383,9 +380,6 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 			if j.Value == "未选择" {
 				return errors.New(errStr)
 			}
-		}
-		if v.Result.Remarks == "" {
-			return errors.New(errStr)
 		}
 	}
 	return nil
