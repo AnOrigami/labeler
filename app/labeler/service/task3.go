@@ -357,19 +357,19 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 	}
 	for _, v := range req.Command.Result.Labels {
 		if v.Value == "" {
-			return errors.New("指令错误")
+			return errors.New("指令未完成标注")
 		}
 	}
 	for _, v := range req.Command.Result.Judgment {
 		if v.Value == "未选择" {
-			return errors.New("指令错误")
+			return errors.New("指令未完成标注")
 		}
 	}
 	if req.Command.Result.Remarks == "" {
-		return errors.New("指令错误")
+		return errors.New("指令未完成标注")
 	}
 	for i, v := range req.Output {
-		errStr := fmt.Sprintf("输出%v错误", i+1)
+		errStr := fmt.Sprintf("输出%v未完成标注", i+1)
 		if v.Sort < 1 || v.Sort > len(req.Output) {
 			return errors.New(errStr)
 		}
@@ -390,19 +390,6 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 	}
 	return nil
 }
-
-//func UniqueAndAscArr(m []int) []int {
-//	d := make([]int, 0)
-//	tempMap := make(map[int]bool, len(m))
-//	for _, v := range m {
-//		if tempMap[v] == false {
-//			tempMap[v] = true
-//			d = append(d, v)
-//		}
-//	}
-//	sort.Ints(d[:])
-//	return d
-//}
 
 type BatchSetTask3StatusReq struct {
 	UserID        string               `json:"-"`
