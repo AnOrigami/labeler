@@ -366,13 +366,14 @@ func (svc *LabelerService) CheckTask3(ctx context.Context, task model.Task3, req
 		}
 	}
 	for i, v := range req.Output {
-		errStr := fmt.Sprintf("输出%v未完成标注", i+1)
-		if v.Sort < 1 || v.Sort > len(req.Output) {
+		errStr := fmt.Sprintf("输出%v排序未完成", i+1)
+		if v.Sort < 1 || v.Sort > 5 {
 			return errors.New(errStr)
 		}
 		if v.Skip {
 			continue
 		}
+		errStr = fmt.Sprintf("输出%v未完成标注", i+1)
 		if v.Result.Score < 1 || v.Result.Score > 7 {
 			return errors.New(errStr)
 		}
