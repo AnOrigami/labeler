@@ -347,7 +347,7 @@ func (svc *LabelerService) CheckTask4(ctx context.Context, task model.Task4, req
 		}
 		errStr = fmt.Sprintf("输出%v未完成标注", i+1)
 		for _, v := range v.Result.Scores {
-			if v.Score < 0 || v.Score > v.Max {
+			if v.Score <= 0 || v.Score > v.Max {
 				return errors.New(errStr)
 			}
 			if v.Name == "" {
