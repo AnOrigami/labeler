@@ -268,18 +268,22 @@ func (api *LabelerAPI) DownloadTask4() GinHandler {
 
 func (api *LabelerAPI) GetTask4() GinHandler {
 	return func(c *gin.Context) {
-		id := c.Query("id")
-		if len(id) == 0 {
+		var req service.GetTask4Req
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.WorkType != 0 && req.WorkType != 1 && req.WorkType != 2 {
+			response.Error(c, 500, nil, "参数异常")
+			return
+		}
+		if req.ID.IsZero() {
 			response.Error(c, 500, nil, "id不能为空")
 			return
 		}
-		objectID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
-			response.Error(c, 500, err, "参数异常")
-		}
-
-		resp, err := api.LabelerService.GetTask4(c.Request.Context(), objectID)
+		p := actions.GetPermissionFromContext(c)
+		resp, err := api.LabelerService.GetTask4(c.Request.Context(), req, p)
 		if err != nil {
 			response.Error(c, 500, err, "")
 			return
