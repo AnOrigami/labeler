@@ -19,6 +19,7 @@ import (
 
 	"go-admin/app/admin/models"
 	"go-admin/app/labeler/model"
+	"go-admin/common/actions"
 	"go-admin/common/dto"
 	"go-admin/common/log"
 	"go-admin/common/util"
@@ -525,18 +526,55 @@ func (svc *LabelerService) DownloadTask4(ctx context.Context, req DownloadTask4R
 	return DownloadTask4Resp{File: &res, FileName: nameStr}, nil
 }
 
-func (svc *LabelerService) GetTask4(ctx context.Context, id primitive.ObjectID) (model.Task4, error) {
+type GetTask4Req struct {
+	ID       primitive.ObjectID `json:"id"`
+	Status   []string           `json:"status"`
+	WorkType int64              `json:"workType"`
+}
+
+type GetTask4Resp struct {
+	Last primitive.ObjectID `json:"last"`
+	Next primitive.ObjectID `json:"next"`
+	model.Task4
+}
+
+func (svc *LabelerService) GetTask4(ctx context.Context, req GetTask4Req, p *actions.DataPermission) (GetTask4Resp, error) {
 	var task model.Task4
 	var users []models.SysUser
+	filter := bson.M{}
 	ids := make([]string, 0)
-	if err := svc.CollectionTask4.FindOne(ctx, bson.D{{"_id", id}}).Decode(&task); err != nil {
+	userID := strconv.Itoa(p.UserId)
+	if err := svc.CollectionTask4.FindOne(ctx, bson.D{{"_id", req.ID}}).Decode(&task); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return model.Task4{}, ErrNoDoc
+			return GetTask4Resp{}, ErrNoDoc
 		}
 		log.Logger().WithContext(ctx).Error("get task: ", err.Error())
-		return model.Task4{}, err
+		return GetTask4Resp{}, err
 	}
-
+	if req.WorkType == 1 {
+		if !task.Permissions.IsLabeler(userID) {
+			return GetTask4Resp{}, errors.New("任务已被撤回/删除，请刷新任务列表重新进入")
+		}
+		filter = bson.M{
+			"projectId":              task.ProjectID,
+			"permissions.labeler.id": userID,
+			"status": bson.M{
+				"$in": req.Status,
+			},
+		}
+	}
+	if req.WorkType == 2 {
+		if !task.Permissions.IsChecker(userID) {
+			return GetTask4Resp{}, errors.New("任务已被撤回/删除，请刷新任务列表重新进入")
+		}
+		filter = bson.M{
+			"projectId":              task.ProjectID,
+			"permissions.checker.id": userID,
+			"status": bson.M{
+				"$in": req.Status,
+			},
+		}
+	}
 	if task.Permissions.Labeler != nil {
 		ids = append(ids, task.Permissions.Labeler.ID)
 	}
@@ -559,5 +597,32 @@ func (svc *LabelerService) GetTask4(ctx context.Context, id primitive.ObjectID) 
 	if task.Permissions.Checker != nil {
 		task.Permissions.Checker.NickName = userMap[task.Permissions.Checker.ID]
 	}
-	return task, nil
+
+	var nextTask model.Task4
+	var lastTask model.Task4
+	filter["_id"] = bson.M{"$gt": task.ID}
+	if err := svc.CollectionTask4.FindOne(ctx, filter).Decode(&nextTask); err != nil {
+		if err != mongo.ErrNoDocuments {
+			log.Logger().WithContext(ctx).Error("get task: ", err.Error())
+			return GetTask4Resp{}, err
+		}
+	}
+
+	filter["_id"] = bson.M{"$lt": task.ID}
+	option := options.FindOne().SetSort(bson.M{"_id": -1})
+	if err := svc.CollectionTask4.FindOne(ctx, filter, option).Decode(&lastTask); err != nil {
+		if err != mongo.ErrNoDocuments {
+			log.Logger().WithContext(ctx).Error("get task: ", err.Error())
+			return GetTask4Resp{}, err
+		}
+	}
+	res := GetTask4Resp{
+		Task4: task,
+	}
+	if req.WorkType == 0 {
+		return res, nil
+	}
+	res.Last = lastTask.ID
+	res.Next = nextTask.ID
+	return res, nil
 }
