@@ -282,6 +282,9 @@ func (api *LabelerAPI) GetTask4() GinHandler {
 			response.Error(c, 500, nil, "id不能为空")
 			return
 		}
+		if len(req.Status) == 0 {
+			req.Status = []string{"未分配", "待标注", "已提交", "待审核", "已审核", "审核不通过"}
+		}
 		p := actions.GetPermissionFromContext(c)
 		resp, err := api.LabelerService.GetTask4(c.Request.Context(), req, p)
 		if err != nil {
