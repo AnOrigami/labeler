@@ -56,11 +56,16 @@ func (svc *LabelerService) UploadTask4(ctx context.Context, req UploadTask4Req) 
 			Value: "未选择",
 		}
 	}
-	scores := make([]model.Score, len(project.Schema.Scores))
-	for i, v := range project.Schema.Scores {
-		scores[i] = model.Score{
-			Name: v.Name,
-			Max:  v.Max,
+	scoreGroups := make([]model.ScoreGroup, len(project.Schema.ScoreGroups))
+	for i, v := range project.Schema.ScoreGroups {
+		scores := make([]model.Score, len(v.Scores))
+		for j, k := range v.Scores {
+			scores[j].Name = k
+		}
+		scoreGroups[i] = model.ScoreGroup{
+			Name:   v.Name,
+			Scores: scores,
+			Max:    v.Max,
 		}
 	}
 	tasks := make([]any, len(req.Rows))
@@ -79,8 +84,8 @@ func (svc *LabelerService) UploadTask4(ctx context.Context, req UploadTask4Req) 
 				output := model.Task4OutputItem{
 					Content: v,
 					Result: model.Task4OutputRes{
-						Judgment: outputJudgment,
-						Scores:   scores,
+						Judgment:    outputJudgment,
+						ScoreGroups: scoreGroups,
 					},
 				}
 				outputs = append(outputs, output)
@@ -347,14 +352,6 @@ func (svc *LabelerService) CheckTask4(ctx context.Context, task model.Task4, req
 			return errors.New(errStr)
 		}
 		errStr = fmt.Sprintf("输出%v未完成标注", i+1)
-		for _, v := range v.Result.Scores {
-			if v.Score <= 0 || v.Score > v.Max {
-				return errors.New(errStr)
-			}
-			if v.Name == "" {
-				return errors.New(errStr)
-			}
-		}
 		for _, j := range v.Result.Judgment {
 			if j.Value == "未选择" {
 				return errors.New(errStr)

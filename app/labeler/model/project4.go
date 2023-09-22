@@ -11,11 +11,16 @@ type Project4 struct {
 }
 
 type Schema4 struct {
-	OutputJudgment []string   `bson:"outputJudgment" json:"outputJudgment"`
-	Scores         []ScoreSet `bson:"scoreSet" json:"scoreSet"`
+	OutputJudgment []string         `bson:"outputJudgment" json:"outputJudgment"`
+	ScoreGroups    []ScoreGroupItem `bson:"scoreGroups" json:"scoreGroups"`
 }
 
-type ScoreSet struct {
-	Name string `bson:"name" json:"name"`
-	Max  int64  `bson:"max" json:"max"`
+type ScoreGroupItem struct {
+	Name   string   `bson:"name" json:"name"`
+	Scores []string `bson:"scores" json:"scores"`
+	Max    int64    `bson:"max" json:"max"`
 }
+
+//type ScoreItem struct {
+//	Name string `bson:"name" json:"name"`
+//}

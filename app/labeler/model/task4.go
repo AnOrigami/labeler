@@ -13,14 +13,19 @@ type Task4OutputItem struct {
 }
 
 type Task4OutputRes struct {
-	Scores   []Score    `bson:"scores" json:"scores"`
-	Judgment []Judgment `bson:"judgment" json:"judgment"`
-	Remarks  string     `bson:"remarks" json:"remarks"`
+	ScoreGroups []ScoreGroup `bson:"scoreGroups" json:"scoreGroups"`
+	Judgment    []Judgment   `bson:"judgment" json:"judgment"`
+	Remarks     string       `bson:"remarks" json:"remarks"`
+}
+
+type ScoreGroup struct {
+	Name   string  `bson:"name" json:"name"`
+	Scores []Score `bson:"scores" json:"scores"`
+	Max    int64   `bson:"max" json:"max"`
 }
 
 type Score struct {
 	Name  string `bson:"name" json:"name"`
-	Max   int64  `bson:"max" json:"max"`
 	Score int64  `bson:"score" json:"score"`
 }
 
