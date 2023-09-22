@@ -348,7 +348,7 @@ func (svc *LabelerService) CheckTask4(ctx context.Context, task model.Task4, req
 	}
 	for i, v := range req.Output {
 		errStr := fmt.Sprintf("输出%v排序未完成", i+1)
-		if v.Sort < 1 || v.Sort > 5 {
+		if v.Sort < 0 || v.Sort > 5 {
 			return errors.New(errStr)
 		}
 		errStr = fmt.Sprintf("输出%v未完成标注", i+1)
