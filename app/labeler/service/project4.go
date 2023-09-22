@@ -15,7 +15,7 @@ import (
 
 func (svc *LabelerService) CreateProject4(ctx context.Context, req model.Project4) (model.Project4, error) {
 	InitObjectID(&req.ID)
-	for _, v := range req.Schema.Scores {
+	for _, v := range req.Schema.ScoreGroups {
 		if v.Max > 5 {
 			return model.Project4{}, errors.New("分数最大值为5")
 		}
