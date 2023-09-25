@@ -482,22 +482,20 @@ func (svc *LabelerService) DownloadTask4(ctx context.Context, req DownloadTask4R
 		},
 	}
 
-	dateFilter := bson.M{}
-	if len(req.UpdateTimeStart) > 0 {
-		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
+	if len(req.UpdateTimeStart) > 0 && len(req.UpdateTimeEnd) > 0 {
+		startTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
 		if err != nil {
 			return DownloadTask4Resp{}, ErrTimeParse
 		}
-		dateFilter["$gte"] = t
-	}
-	if len(req.UpdateTimeEnd) > 0 {
-		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
+		endTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
 		if err != nil {
 			return DownloadTask4Resp{}, ErrTimeParse
 		}
-		dateFilter["$lte"] = t
+		filter["updateTime"] = bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		}
 	}
-	filter["updateTime"] = dateFilter
 
 	cursor, err := svc.CollectionTask4.Find(ctx, filter)
 	if err != nil {
