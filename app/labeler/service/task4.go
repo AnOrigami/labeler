@@ -463,8 +463,10 @@ func (svc *LabelerService) DeleteTask4(ctx context.Context, id primitive.ObjectI
 }
 
 type DownloadTask4Req struct {
-	ProjectID primitive.ObjectID `json:"projectId"`
-	Status    []string           `json:"status"`
+	ProjectID       primitive.ObjectID `json:"projectId"`
+	Status          []string           `json:"status"`
+	UpdateTimeStart string             `json:"updateTimeStart"`
+	UpdateTimeEnd   string             `json:"updateTimeEnd"`
 }
 
 type DownloadTask4Resp struct {
@@ -479,6 +481,26 @@ func (svc *LabelerService) DownloadTask4(ctx context.Context, req DownloadTask4R
 			"$in": req.Status,
 		},
 	}
+
+	if len(req.UpdateTimeStart) > 0 {
+		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
+		if err != nil {
+			return DownloadTask4Resp{}, ErrTimeParse
+		}
+		filter["updateTime"] = bson.M{
+			"$gte": t,
+		}
+	}
+	if len(req.UpdateTimeEnd) > 0 {
+		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
+		if err != nil {
+			return DownloadTask4Resp{}, ErrTimeParse
+		}
+		filter["updateTime"] = bson.M{
+			"$lte": t,
+		}
+	}
+
 	cursor, err := svc.CollectionTask4.Find(ctx, filter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
