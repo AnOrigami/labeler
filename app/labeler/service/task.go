@@ -185,9 +185,15 @@ func buildFilter(req SearchTaskReq) (bson.M, error) {
 		if err != nil {
 			return nil, ErrTimeParse
 		}
-		filter["updateTime"] = bson.M{
-			"$lte": t,
+		value, ok := filter["updateTime"]
+		if ok {
+			value.(bson.M)["$lte"] = t
+			filter["updateTime"] = value
 		}
+
+		//filter["updateTime"] = bson.M{
+		//	"$lte": t,
+		//}
 	}
 	switch req.PType {
 	case PermissionTypeLabeler:
