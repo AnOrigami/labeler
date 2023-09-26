@@ -31,7 +31,7 @@ func task4AuthRouter() RouterCheckRole {
 		g.DELETE("/api/v1/labeler/t4/", api.DeleteTask4())
 		g.POST("/api/v1/labeler/t4/download", api.DownloadTask4())
 		g.POST("/api/v1/labeler/t4/detail", api.GetTask4())
-		g.POST("/api/v1/labeler/t4/alloc/checker", api.Task2BatchAllocChecker())
+		g.POST("/api/v1/labeler/t4/alloc/checker", api.Task4BatchAllocChecker())
 	}
 }
 
