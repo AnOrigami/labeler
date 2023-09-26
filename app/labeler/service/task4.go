@@ -20,6 +20,7 @@ import (
 	"go-admin/app/admin/models"
 	"go-admin/app/labeler/model"
 	"go-admin/common/actions"
+	"go-admin/common/counter"
 	"go-admin/common/dto"
 	"go-admin/common/log"
 	"go-admin/common/util"
@@ -640,4 +641,110 @@ func (svc *LabelerService) GetTask4(ctx context.Context, req GetTask4Req, p *act
 	res.Last = lastTask.ID
 	res.Next = nextTask.ID
 	return res, nil
+}
+
+type Task4BatchAllocCheckerReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Persons   []string           `json:"persons"`
+	Number    int64              `json:"number"`
+}
+
+type Task4BatchAllocCheckerResp struct {
+	Count int64 `json:"count"`
+}
+
+func (svc *LabelerService) Task4BatchAllocChecker(ctx context.Context, req Task4BatchAllocCheckerReq) (Task4BatchAllocCheckerResp, error) {
+	if req.Number <= 0 {
+		return Task4BatchAllocCheckerResp{}, errors.New("分配任务数量不合法")
+	}
+	if len(req.Persons) == 0 {
+		return Task4BatchAllocCheckerResp{}, errors.New("分配人员数量不能为0")
+	}
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"status":    model.TaskStatusSubmit,
+		"permissions.labeler": bson.M{
+			"$exists": true,
+		},
+		"permissions.checker": bson.M{
+			"$exists": false,
+		},
+	}
+	maxCount := int(req.Number) / len(req.Persons)
+	if maxCount < 1 {
+		maxCount = 1
+	}
+
+	result, err := svc.CollectionTask4.Find(ctx, filter, options.Find().SetProjection(bson.M{
+		"_id":                 1,
+		"permissions.labeler": 1,
+	}))
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return Task4BatchAllocCheckerResp{}, err
+	}
+	var tasks []model.Task4
+	if err = result.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return Task4BatchAllocCheckerResp{}, err
+	}
+	if len(tasks) == 0 {
+		return Task4BatchAllocCheckerResp{}, errors.New("当前无可分配任务")
+	}
+
+	checkerTaskCounter := make(counter.Counter[string], len(req.Persons))
+	for _, person := range req.Persons {
+		checkerTaskCounter[person] = 0
+	}
+	for _, task := range tasks {
+		checkerTaskCounter.IncIfExists(task.Permissions.Labeler.ID, 1)
+	}
+	var totalCount int64
+	personTasks := make(map[string][]primitive.ObjectID, len(req.Persons))
+OuterLoop:
+	for len(checkerTaskCounter) > 0 {
+		labeler, _ := checkerTaskCounter.PopMax()
+		for i := len(tasks) - 1; i >= 0; i-- {
+			if totalCount == req.Number {
+				break OuterLoop
+			}
+			if len(personTasks[labeler]) == maxCount {
+				break
+			}
+			if labeler == tasks[i].Permissions.Labeler.ID {
+				continue
+			}
+			personTasks[labeler] = append(personTasks[labeler], tasks[i].ID)
+			totalCount++
+			//减少标注数量
+			checkerTaskCounter.IncIfExists(tasks[i].Permissions.Labeler.ID, -1)
+			// 从 tasks 切片中删除任务
+			tasks[i] = tasks[len(tasks)-1]
+			tasks = tasks[:len(tasks)-1]
+		}
+	}
+	//保存此次分配分任务
+	for labeler, checkTasks := range personTasks {
+		if _, err := svc.CollectionTask2.UpdateMany(
+			ctx,
+			bson.M{
+				"_id": bson.M{"$in": checkTasks},
+			},
+			bson.M{
+				"$set": bson.M{
+					"permissions.checker": model.Person{ID: labeler},
+					"status":              model.TaskStatusChecking,
+					"updateTime":          util.Datetime(time.Now()),
+				},
+			},
+		); err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return Task4BatchAllocCheckerResp{}, err
+		}
+	}
+
+	if totalCount == 0 {
+		return Task4BatchAllocCheckerResp{}, errors.New("分配失败：标注员和审核员不能是同一人")
+	}
+	return Task4BatchAllocCheckerResp{Count: totalCount}, nil
 }
