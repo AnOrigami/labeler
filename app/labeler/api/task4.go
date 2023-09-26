@@ -31,6 +31,7 @@ func task4AuthRouter() RouterCheckRole {
 		g.DELETE("/api/v1/labeler/t4/", api.DeleteTask4())
 		g.POST("/api/v1/labeler/t4/download", api.DownloadTask4())
 		g.POST("/api/v1/labeler/t4/detail", api.GetTask4())
+		g.POST("/api/v1/labeler/t4/alloc/checker", api.Task2BatchAllocChecker())
 	}
 }
 
@@ -292,5 +293,27 @@ func (api *LabelerAPI) GetTask4() GinHandler {
 			return
 		}
 		response.OK(c, resp, "获取成功")
+	}
+}
+
+func (api *LabelerAPI) Task4BatchAllocChecker() GinHandler {
+	return func(c *gin.Context) {
+		var req service.Task4BatchAllocCheckerReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ProjectID.IsZero() {
+			response.Error(c, 400, nil, "项目id不能为空")
+			return
+		}
+		resp, err := api.LabelerService.Task4BatchAllocChecker(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "分配成功")
 	}
 }
