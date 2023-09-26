@@ -87,6 +87,11 @@ type Project4CountResp struct {
 	AllocatedLabel   int64 `json:"allocatedLabel"`
 	Labeling         int64 `json:"labeling"`
 	Submit           int64 `json:"submit"`
+	UnallocatedCheck int64 `json:"unallocatedCheck"`
+	AllocatedCheck   int64 `json:"allocatedCheck"`
+	Checking         int64 `json:"checking"`
+	Passed           int64 `json:"passed"`
+	Failed           int64 `json:"failed"`
 }
 
 func (svc *LabelerService) Project4Count(ctx context.Context, req Project4CountReq) (Project4CountResp, error) {
@@ -132,9 +137,17 @@ func (svc *LabelerService) Project4Count(ctx context.Context, req Project4CountR
 			resp.Labeling = count
 		case model.TaskStatusSubmit:
 			resp.Submit = count
+		case model.TaskStatusChecking:
+			resp.Checking = count
+		case model.TaskStatusPassed:
+			resp.Passed = count
+		case model.TaskStatusFailed:
+			resp.Failed = count
 		}
 		resp.Total += count
 	}
+	resp.AllocatedCheck = resp.Checking + resp.Passed + resp.Failed
+	resp.UnallocatedCheck = resp.Submit
 	resp.AllocatedLabel = resp.Total - resp.UnallocatedLabel
 	return resp, nil
 }
