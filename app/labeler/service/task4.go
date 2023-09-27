@@ -383,21 +383,65 @@ func (svc *LabelerService) BatchSetTask4Status(ctx context.Context, req BatchSet
 		},
 	}
 	if req.UserDataScope != "1" && req.UserDataScope != "2" {
-		filter["permissions.labeler.id"] = req.UserID
+		filter["$or"] = bson.A{
+			bson.M{"permissions.labeler.id": req.UserID},
+			bson.M{"permissions.checker.id": req.UserID},
+		}
 	}
+	normalStatusMap := map[string][]string{
+		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusChecking: {model.TaskStatusSubmit, model.TaskStatusFailed},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusSubmit},
+	}
+	specialStatusMap := map[string][]string{
+		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
+		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
+		model.TaskStatusChecking: {model.TaskStatusFailed},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusAllocate},
+	}
+
+	//任务状态为{未分配}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
+	//
+	//任务状态为{待标注}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
+	//
+	//任务状态为{审核不通过}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为待审核
+	//
+	//任务状态为{已提交}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	//
+	//任务状态为{待审核}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	//
+	//任务状态为{已审核}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
 	update := bson.M{
 		"$set": bson.M{
 			"status":     req.Status,
 			"updateTime": util.Datetime(time.Now()),
 		},
 	}
+	if req.UserDataScope != "1" && req.UserDataScope != "2" {
+		if validSourceStatus := normalStatusMap[req.Status]; validSourceStatus != nil {
+			filter["status"] = bson.M{
+				"$in": validSourceStatus,
+			}
+		}
+	} else {
+		if validSourceStatus := specialStatusMap[req.Status]; validSourceStatus != nil {
+			filter["status"] = bson.M{
+				"$in": validSourceStatus,
+			}
+		}
+	}
+
 	result, err := svc.CollectionTask4.UpdateMany(ctx, filter, update)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return BatchSetTask4StatusResp{}, err
 	}
-	if result.ModifiedCount == 0 {
-		return BatchSetTask4StatusResp{}, errors.New("权限不足")
+	if int(result.ModifiedCount) < len(req.IDs) {
+		if req.Status == model.TaskStatusSubmit {
+			return BatchSetTask4StatusResp{}, errors.New("提交失败：任务已被分配审核")
+		}
+		return BatchSetTask4StatusResp{}, errors.New("部分任务状态没有修改")
 	}
 	return BatchSetTask4StatusResp{Count: result.ModifiedCount}, err
 }
@@ -552,9 +596,14 @@ func (svc *LabelerService) DownloadTask4(ctx context.Context, req DownloadTask4R
 }
 
 type GetTask4Req struct {
-	ID       primitive.ObjectID `json:"id"`
-	Status   []string           `json:"status"`
-	WorkType int64              `json:"workType"`
+	ID              primitive.ObjectID `json:"id"`
+	Name            string             `json:"name"`
+	Labeler         string             `json:"labeler"`
+	Checker         string             `json:"checker"`
+	UpdateTimeStart string             `json:"updateTimeStart"`
+	UpdateTimeEnd   string             `json:"updateTimeEnd"`
+	Status          []string           `json:"status"`
+	WorkType        int64              `json:"workType"`
 }
 
 type GetTask4Resp struct {
@@ -600,6 +649,9 @@ func (svc *LabelerService) GetTask4(ctx context.Context, req GetTask4Req, p *act
 			},
 		}
 	}
+	if req.WorkType == 0 {
+		filter = buildTask4DetailFilter(req)
+	}
 	if task.Permissions.Labeler != nil {
 		ids = append(ids, task.Permissions.Labeler.ID)
 	}
@@ -644,12 +696,54 @@ func (svc *LabelerService) GetTask4(ctx context.Context, req GetTask4Req, p *act
 	res := GetTask4Resp{
 		Task4: task,
 	}
-	if req.WorkType == 0 {
-		return res, nil
-	}
 	res.Last = lastTask.ID
 	res.Next = nextTask.ID
 	return res, nil
+}
+
+func buildTask4DetailFilter(req GetTask4Req) bson.M {
+	filter := bson.M{}
+	if len(req.Status) > 0 {
+		filter["status"] = bson.M{
+			"$in": req.Status,
+		}
+	}
+	if len(req.Labeler) > 0 {
+		filter["permissions.labeler.id"] = bson.M{
+			"$in": req.Labeler,
+		}
+	}
+	if len(req.Checker) > 0 {
+		filter["permissions.checker.id"] = bson.M{
+			"$in": req.Checker,
+		}
+	}
+	if len(req.Name) > 0 {
+		filter["name"] = bson.M{
+			"$regex": req.Name,
+		}
+	}
+	if len(req.UpdateTimeStart) > 0 {
+		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
+		if err != nil {
+			return nil
+		}
+		filter["updateTime"] = bson.M{
+			"$gte": t,
+		}
+	}
+	if len(req.UpdateTimeEnd) > 0 {
+		t, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
+		if err != nil {
+			return nil
+		}
+		value, ok := filter["updateTime"]
+		if ok {
+			value.(bson.M)["$lte"] = t
+			filter["updateTime"] = value
+		}
+	}
+	return filter
 }
 
 type Task4BatchAllocCheckerReq struct {
