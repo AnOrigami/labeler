@@ -403,23 +403,32 @@ func (svc *LabelerService) BatchSetTask4Status(ctx context.Context, req BatchSet
 }
 
 type SearchMyTask4Req struct {
-	ID     primitive.ObjectID `json:"id"`
-	UserID string
-	Status []string `json:"status"`
+	ID       primitive.ObjectID `json:"id"`
+	UserID   string
+	Status   []string `json:"status"`
+	TaskType string   `json:"taskType"`
 	dto.Pagination
 }
 
 func (svc *LabelerService) SearchMyTask4(ctx context.Context, req SearchMyTask4Req) ([]SearchTask4Resp, int, error) {
 	filter := bson.M{
-		"projectId":              req.ID,
-		"permissions.labeler.id": req.UserID,
+		"projectId": req.ID,
 	}
 	if len(req.Status) != 0 {
 		filter["status"] = bson.M{
 			"$in": req.Status,
 		}
 	}
-
+	if req.TaskType == "标注" {
+		filter["permissions.labeler.id"] = req.UserID
+	} else if req.TaskType == "审核" {
+		filter["permissions.checker.id"] = req.UserID
+	} else {
+		filter["$or"] = []bson.M{
+			{"permissions.labeler.id": req.UserID},
+			{"permissions.checker.id": req.UserID},
+		}
+	}
 	cursor, err := svc.CollectionTask4.Find(ctx, filter, buildOptions4(req))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
