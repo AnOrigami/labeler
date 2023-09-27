@@ -734,7 +734,7 @@ OuterLoop:
 	}
 	//保存此次分配分任务
 	for labeler, checkTasks := range personTasks {
-		if _, err := svc.CollectionTask2.UpdateMany(
+		if _, err := svc.CollectionTask4.UpdateMany(
 			ctx,
 			bson.M{
 				"_id": bson.M{"$in": checkTasks},
