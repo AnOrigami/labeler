@@ -120,6 +120,7 @@ type SearchTask4Resp struct {
 	Name       string                  `json:"name"`
 	Status     string                  `json:"status"`
 	Labeler    string                  `json:"labeler"`
+	Checker    string                  `json:"checker"`
 	UpdateTime util.Datetime           `json:"updateTime"`
 	Sort       []int                   `json:"sort"`
 	Text       string                  `json:"text"`
@@ -161,6 +162,9 @@ func (svc *LabelerService) tasksToSearchTask4Resp(ctx context.Context, tasks []m
 		if task.Permissions.Labeler != nil {
 			ids = append(ids, task.Permissions.Labeler.ID)
 		}
+		if task.Permissions.Checker != nil {
+			ids = append(ids, task.Permissions.Checker.ID)
+		}
 	}
 
 	res := make([]SearchTask4Resp, len(tasks))
@@ -177,9 +181,12 @@ func (svc *LabelerService) tasksToSearchTask4Resp(ctx context.Context, tasks []m
 		userMap[strconv.Itoa(v.UserId)] = v.NickName
 	}
 	for i, task := range tasks {
-		var labeler string
+		var labeler, checker string
 		if task.Permissions.Labeler != nil {
 			labeler = userMap[task.Permissions.Labeler.ID]
+		}
+		if task.Permissions.Checker != nil {
+			checker = userMap[task.Permissions.Checker.ID]
 		}
 		res[i] = SearchTask4Resp{
 			ID:         task.ID,
@@ -187,6 +194,7 @@ func (svc *LabelerService) tasksToSearchTask4Resp(ctx context.Context, tasks []m
 			Name:       task.Name,
 			Status:     task.Status,
 			Labeler:    labeler,
+			Checker:    checker,
 			UpdateTime: task.UpdateTime,
 			Text:       task.Text,
 			Output:     task.Output,
@@ -709,14 +717,10 @@ func buildTask4DetailFilter(req GetTask4Req) bson.M {
 		}
 	}
 	if len(req.Labeler) > 0 {
-		filter["permissions.labeler.id"] = bson.M{
-			"$in": req.Labeler,
-		}
+		filter["permissions.labeler.id"] = req.Labeler
 	}
 	if len(req.Checker) > 0 {
-		filter["permissions.checker.id"] = bson.M{
-			"$in": req.Checker,
-		}
+		filter["permissions.checker.id"] = req.Checker
 	}
 	if len(req.Name) > 0 {
 		filter["name"] = bson.M{
