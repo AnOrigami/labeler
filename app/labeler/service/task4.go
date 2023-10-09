@@ -400,13 +400,13 @@ func (svc *LabelerService) BatchSetTask4Status(ctx context.Context, req BatchSet
 		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
 		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
 		model.TaskStatusChecking: {model.TaskStatusSubmit, model.TaskStatusFailed},
-		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusSubmit},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusSubmit, model.TaskStatusFailed},
 	}
 	specialStatusMap := map[string][]string{
 		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
 		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
 		model.TaskStatusChecking: {model.TaskStatusFailed},
-		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusAllocate},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusAllocate, model.TaskStatusFailed},
 	}
 
 	//任务状态为{未分配}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
@@ -770,9 +770,6 @@ func (svc *LabelerService) Task4BatchAllocChecker(ctx context.Context, req Task4
 	filter := bson.M{
 		"projectId": req.ProjectID,
 		"status":    model.TaskStatusSubmit,
-		"permissions.labeler": bson.M{
-			"$exists": true,
-		},
 		"permissions.checker": bson.M{
 			"$exists": false,
 		},
