@@ -590,6 +590,7 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 	if len(tasks) == 0 {
 		return errors.New("当前无可分配任务")
 	}
+	nowTime := util.Datetime(time.Now())
 	var totalCount int
 	for _, task := range tasks {
 		var minCount = math.MaxInt
@@ -617,7 +618,7 @@ func (svc *LabelerService) AllocateCheckTasks(ctx context.Context, req AllocateC
 			"$set": bson.M{
 				"permissions.checker": model.Person{ID: minID},
 				"status":              model.TaskStatusChecking,
-				"updateTime":          util.Datetime(time.Now()),
+				"updateTime":          nowTime,
 			},
 		}
 		if _, err := svc.CollectionTask.UpdateOne(ctx, ft, update); err != nil {
