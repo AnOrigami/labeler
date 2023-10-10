@@ -325,7 +325,7 @@ func (svc *LabelerService) UpdateTask4(ctx context.Context, req UpdateTask4Req) 
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return model.Task4{}, err
 	}
-	if req.UserDataScope != "1" && req.UserDataScope != "2" && !task.Permissions.IsLabeler(req.UserID) {
+	if req.UserDataScope != "1" && req.UserDataScope != "2" && !task.Permissions.IsLabeler(req.UserID) && !task.Permissions.IsChecker(req.UserID) {
 		return model.Task4{}, errors.New("权限不足")
 	}
 	if err := svc.CheckTask4(ctx, task, req); err != nil {
