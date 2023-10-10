@@ -308,12 +308,12 @@ func (api *LabelerAPI) Task4BatchAllocChecker() GinHandler {
 			response.Error(c, 400, nil, "项目id不能为空")
 			return
 		}
-		resp, err := api.LabelerService.Task4BatchAllocChecker(c.Request.Context(), req)
+		err := api.LabelerService.Task4BatchAllocChecker(c.Request.Context(), req)
 		if err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "")
 			return
 		}
-		response.OK(c, resp, "分配成功")
+		response.OK(c, nil, "分配成功")
 	}
 }
