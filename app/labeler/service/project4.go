@@ -146,8 +146,38 @@ func (svc *LabelerService) Project4Count(ctx context.Context, req Project4CountR
 		}
 		resp.Total += count
 	}
-	resp.AllocatedCheck = resp.Checking + resp.Passed + resp.Failed
+	allocatedLabelFilter := bson.M{
+		"projectId": req.ID,
+		"status": bson.M{
+			"$in": []string{"已提交", "待审核", "已审核", "审核不通过"},
+		},
+		"permissions.labeler": bson.M{
+			"$exists": true,
+		},
+	}
+	allocatedCheckFilter := bson.M{
+		"projectId": req.ID,
+		"status": bson.M{
+			"$in": []string{"已审核", "审核不通过"},
+		},
+		"permissions.checker": bson.M{
+			"$exists": true,
+		},
+	}
+	count, err := svc.CollectionTask4.CountDocuments(ctx, allocatedLabelFilter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return Project4CountResp{}, err
+	}
+	resp.AllocatedLabel = resp.Labeling + count
+
+	count, err = svc.CollectionTask4.CountDocuments(ctx, allocatedCheckFilter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return Project4CountResp{}, err
+	}
+	resp.AllocatedCheck = resp.Checking + count
+
 	resp.UnallocatedCheck = resp.Submit
-	resp.AllocatedLabel = resp.Total - resp.UnallocatedLabel
 	return resp, nil
 }
