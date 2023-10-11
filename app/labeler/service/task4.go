@@ -217,6 +217,7 @@ type Task4BatchAllocLabelerResp struct {
 func (svc *LabelerService) Task4BatchAllocLabeler(ctx context.Context, req Task4BatchAllocLabelerReq) (Task4BatchAllocLabelerResp, error) {
 	filter := bson.M{
 		"projectId": req.ProjectID,
+		"status":    model.TaskStatusAllocate,
 		"permissions.labeler": bson.M{
 			"$exists": false,
 		},
