@@ -307,7 +307,7 @@ func (svc *LabelerService) ResetTasks4(ctx context.Context, req ResetTasks4Req) 
 		return ResetTasks4Resp{Count: result.ModifiedCount}, nil
 	} else {
 		filter["permissions.checker.id"] = bson.M{
-			"$nin": req.Persons,
+			"$in": req.Persons,
 		}
 		update := bson.M{
 			"$set": bson.M{
