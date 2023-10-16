@@ -145,7 +145,18 @@ func (api *LabelerAPI) ResetTasks4() GinHandler {
 			response.Error(c, 400, nil, "project id不能为空")
 			return
 		}
-
+		if len(req.Statuses) == 0 {
+			response.Error(c, 400, nil, "状态不能为空")
+			return
+		}
+		if len(req.Persons) == 0 {
+			response.Error(c, 400, nil, "人员不能为空")
+			return
+		}
+		if req.ResetType != 0 && req.ResetType != 1 {
+			response.Error(c, 400, nil, "重置类型错误")
+			return
+		}
 		resp, err := api.LabelerService.ResetTasks4(c.Request.Context(), req)
 		if err != nil {
 			response.Error(c, 500, err, "")
