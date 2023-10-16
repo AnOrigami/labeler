@@ -274,6 +274,7 @@ type ResetTasks4Req struct {
 	ProjectID primitive.ObjectID `json:"projectId"`
 	Persons   []string           `json:"persons"`
 	Statuses  []string           `json:"statuses"`
+	ResetType int64              `json:"resetType"`
 }
 
 type ResetTasks4Resp struct {
@@ -282,32 +283,46 @@ type ResetTasks4Resp struct {
 
 func (svc *LabelerService) ResetTasks4(ctx context.Context, req ResetTasks4Req) (ResetTasks4Resp, error) {
 	filter := bson.M{}
-	if !req.ProjectID.IsZero() {
-		filter["projectId"] = req.ProjectID
+	filter["projectId"] = req.ProjectID
+	filter["status"] = bson.M{
+		"$in": req.Statuses,
 	}
-	if len(req.Persons) > 0 {
+
+	if req.ResetType == 0 {
 		filter["permissions.labeler.id"] = bson.M{
 			"$in": req.Persons,
 		}
-	}
-	if len(req.Statuses) > 0 {
-		filter["status"] = bson.M{
-			"$in": req.Statuses,
+		update := bson.M{
+			"$set": bson.M{
+				"permissions": model.Permissions{},
+				"status":      model.TaskStatusAllocate,
+				"updateTime":  util.Datetime(time.Now()),
+			},
 		}
+		result, err := svc.CollectionTask4.UpdateMany(ctx, filter, update)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return ResetTasks4Resp{}, err
+		}
+		return ResetTasks4Resp{Count: result.ModifiedCount}, nil
+	} else {
+		filter["permissions.checker.id"] = bson.M{
+			"$nin": req.Persons,
+		}
+		update := bson.M{
+			"$set": bson.M{
+				"permissions.checker": model.Person{},
+				"status":              model.TaskStatusPassed,
+				"updateTime":          util.Datetime(time.Now()),
+			},
+		}
+		result, err := svc.CollectionTask4.UpdateMany(ctx, filter, update)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return ResetTasks4Resp{}, err
+		}
+		return ResetTasks4Resp{Count: result.ModifiedCount}, nil
 	}
-	update := bson.M{
-		"$set": bson.M{
-			"permissions": model.Permissions{},
-			"status":      model.TaskStatusAllocate,
-			"updateTime":  util.Datetime(time.Now()),
-		},
-	}
-	result, err := svc.CollectionTask4.UpdateMany(ctx, filter, update)
-	if err != nil {
-		log.Logger().WithContext(ctx).Error(err.Error())
-		return ResetTasks4Resp{}, err
-	}
-	return ResetTasks4Resp{Count: result.ModifiedCount}, nil
 }
 
 type UpdateTask4Req struct {
