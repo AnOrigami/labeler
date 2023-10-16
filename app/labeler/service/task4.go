@@ -312,7 +312,7 @@ func (svc *LabelerService) ResetTasks4(ctx context.Context, req ResetTasks4Req) 
 		update := bson.M{
 			"$set": bson.M{
 				"permissions.checker": model.Person{},
-				"status":              model.TaskStatusPassed,
+				"status":              model.TaskStatusSubmit,
 				"updateTime":          util.Datetime(time.Now()),
 			},
 		}
