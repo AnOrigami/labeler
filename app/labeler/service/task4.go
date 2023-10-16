@@ -786,9 +786,6 @@ func (svc *LabelerService) Task4BatchAllocChecker(ctx context.Context, req Task4
 	filter := bson.M{
 		"projectId": req.ProjectID,
 		"status":    model.TaskStatusSubmit,
-		"permissions.checker": bson.M{
-			"$exists": false,
-		},
 	}
 	maxCount := int(req.Number) / len(req.Persons)
 	if maxCount < 1 {
