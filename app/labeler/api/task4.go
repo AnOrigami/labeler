@@ -220,6 +220,10 @@ func (api *LabelerAPI) SearchMyTask4() GinHandler {
 			response.Error(c, 500, err, "参数异常")
 			return
 		}
+		if req.TaskType != "审核" && req.TaskType != "标注" {
+			response.Error(c, 500, nil, "任务类型错误")
+			return
+		}
 		p := actions.GetPermissionFromContext(c)
 		req.UserID = strconv.Itoa(p.UserId)
 		resp, total, err := api.LabelerService.SearchMyTask4(c.Request.Context(), req)

@@ -487,17 +487,190 @@ func (svc *LabelerService) SearchMyTask4(ctx context.Context, req SearchMyTask4R
 			"$in": req.Status,
 		}
 	}
+	if req.PageIndex < 1 {
+		req.PageIndex = 1
+	}
+	if req.PageSize < 1 {
+		req.PageSize = 10
+	}
+	pipe := mongo.Pipeline{}
 	if req.TaskType == "标注" {
 		filter["permissions.labeler.id"] = req.UserID
-	} else if req.TaskType == "审核" {
-		filter["permissions.checker.id"] = req.UserID
+		pipe = mongo.Pipeline{
+			bson.D{
+				{
+					"$match",
+					filter,
+				},
+			},
+			bson.D{
+				{
+					"$addFields",
+					bson.D{
+						{
+							"statusSort",
+							bson.D{
+								{
+									"$switch",
+									bson.D{
+										{
+											"branches",
+											bson.A{
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusFailed}},
+														}},
+													{"then", 1},
+												},
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusLabeling}},
+														}},
+													{"then", 2},
+												},
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusSubmit}},
+														}},
+													{"then", 3},
+												},
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusChecking}},
+														}},
+													{"then", 4},
+												},
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusPassed}},
+														}},
+													{"then", 5},
+												},
+											},
+										},
+										{
+											"default",
+											100.0,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			bson.D{
+				{
+					"$sort",
+					bson.D{
+						{
+							"statusSort",
+							1,
+						},
+					},
+				},
+			},
+			bson.D{
+				{
+					"$skip",
+					int64((req.PageIndex - 1) * req.PageSize),
+				},
+			},
+			bson.D{
+				{
+					"$limit",
+					int64(req.PageSize),
+				},
+			},
+		}
 	} else {
-		filter["$or"] = []bson.M{
-			{"permissions.labeler.id": req.UserID},
-			{"permissions.checker.id": req.UserID},
+		filter["permissions.checker.id"] = req.UserID
+		pipe = mongo.Pipeline{
+			bson.D{
+				{
+					"$match",
+					filter,
+				},
+			},
+			bson.D{
+				{
+					"$addFields",
+					bson.D{
+						{
+							"statusSort",
+							bson.D{
+								{
+									"$switch",
+									bson.D{
+										{
+											"branches",
+											bson.A{
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusChecking}},
+														}},
+													{"then", 1},
+												},
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusPassed}},
+														}},
+													{"then", 2},
+												},
+												bson.D{
+													{"case",
+														bson.D{
+															{"$eq", bson.A{"$status", model.TaskStatusFailed}},
+														}},
+													{"then", 3},
+												},
+											},
+										},
+										{
+											"default",
+											100.0,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			bson.D{
+				{
+					"$sort",
+					bson.D{
+						{
+							"statusSort",
+							1,
+						},
+					},
+				},
+			},
+			bson.D{
+				{
+					"$skip",
+					int64((req.PageIndex - 1) * req.PageSize),
+				},
+			},
+			bson.D{
+				{
+					"$limit",
+					int64(req.PageSize),
+				},
+			},
 		}
 	}
-	cursor, err := svc.CollectionTask4.Find(ctx, filter, buildOptions4(req))
+
+	cursor, err := svc.CollectionTask4.Aggregate(ctx, pipe)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -517,19 +690,6 @@ func (svc *LabelerService) SearchMyTask4(ctx context.Context, req SearchMyTask4R
 	}
 
 	return results, int(count), nil
-}
-
-func buildOptions4(req SearchMyTask4Req) *options.FindOptions {
-	if req.PageIndex < 1 {
-		req.PageIndex = 1
-	}
-	if req.PageSize < 1 {
-		req.PageSize = 10
-	}
-	opts := options.Find().
-		SetLimit(int64(req.PageSize)).
-		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
-	return opts
 }
 
 func (svc *LabelerService) DeleteTask4(ctx context.Context, id primitive.ObjectID) error {
