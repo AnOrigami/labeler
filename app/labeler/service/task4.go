@@ -391,6 +391,7 @@ type BatchSetTask4StatusReq struct {
 	UserDataScope string               `json:"-"`
 	IDs           []primitive.ObjectID `json:"ids"`
 	Status        string               `json:"status"`
+	WorkType      int64                `json:"workType"`
 }
 
 type BatchSetTask4StatusResp struct {
@@ -406,7 +407,7 @@ func (svc *LabelerService) BatchSetTask4Status(ctx context.Context, req BatchSet
 			"$in": req.IDs,
 		},
 	}
-	if req.UserDataScope != "1" && req.UserDataScope != "2" {
+	if req.WorkType != 0 {
 		filter["$or"] = bson.A{
 			bson.M{"permissions.labeler.id": req.UserID},
 			bson.M{"permissions.checker.id": req.UserID},
@@ -442,7 +443,7 @@ func (svc *LabelerService) BatchSetTask4Status(ctx context.Context, req BatchSet
 			"updateTime": util.Datetime(time.Now()),
 		},
 	}
-	if req.UserDataScope != "1" && req.UserDataScope != "2" {
+	if req.WorkType != 0 {
 		if validSourceStatus := normalStatusMap[req.Status]; validSourceStatus != nil {
 			filter["status"] = bson.M{
 				"$in": validSourceStatus,
