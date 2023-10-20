@@ -32,6 +32,7 @@ func task4AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t4/download", api.DownloadTask4())
 		g.POST("/api/v1/labeler/t4/detail", api.GetTask4())
 		g.POST("/api/v1/labeler/t4/alloc/checker", api.Task4BatchAllocChecker())
+		g.POST("/api/v1/labeler/t4/mycount", api.SearchMyTask4Count())
 	}
 }
 
@@ -200,6 +201,10 @@ func (api *LabelerAPI) BatchSetTask4Status() GinHandler {
 			response.Error(c, 400, err, "")
 			return
 		}
+		if req.WorkType != 0 && req.WorkType != 1 && req.WorkType != 2 {
+			response.Error(c, 400, nil, "类型参数异常")
+			return
+		}
 		p := actions.GetPermissionFromContext(c)
 		req.UserID = strconv.Itoa(p.UserId)
 		req.UserDataScope = p.DataScope
@@ -330,5 +335,29 @@ func (api *LabelerAPI) Task4BatchAllocChecker() GinHandler {
 			return
 		}
 		response.OK(c, nil, "分配成功")
+	}
+}
+
+func (api *LabelerAPI) SearchMyTask4Count() GinHandler {
+	return func(c *gin.Context) {
+		var req service.SearchMyTask4CountReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.TaskType != "审核" && req.TaskType != "标注" {
+			response.Error(c, 500, nil, "任务类型错误")
+			return
+		}
+		p := actions.GetPermissionFromContext(c)
+		req.UserID = strconv.Itoa(p.UserId)
+		resp, err := api.LabelerService.SearchMyTask4Count(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "查询成功")
 	}
 }

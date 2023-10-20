@@ -488,190 +488,17 @@ func (svc *LabelerService) SearchMyTask4(ctx context.Context, req SearchMyTask4R
 			"$in": req.Status,
 		}
 	}
-	if req.PageIndex < 1 {
-		req.PageIndex = 1
-	}
-	if req.PageSize < 1 {
-		req.PageSize = 10
-	}
-	pipe := mongo.Pipeline{}
 	if req.TaskType == "标注" {
 		filter["permissions.labeler.id"] = req.UserID
-		pipe = mongo.Pipeline{
-			bson.D{
-				{
-					"$match",
-					filter,
-				},
-			},
-			bson.D{
-				{
-					"$addFields",
-					bson.D{
-						{
-							"statusSort",
-							bson.D{
-								{
-									"$switch",
-									bson.D{
-										{
-											"branches",
-											bson.A{
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusFailed}},
-														}},
-													{"then", 1},
-												},
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusLabeling}},
-														}},
-													{"then", 2},
-												},
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusSubmit}},
-														}},
-													{"then", 3},
-												},
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusChecking}},
-														}},
-													{"then", 4},
-												},
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusPassed}},
-														}},
-													{"then", 5},
-												},
-											},
-										},
-										{
-											"default",
-											100.0,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			bson.D{
-				{
-					"$sort",
-					bson.D{
-						{
-							"statusSort",
-							1,
-						},
-					},
-				},
-			},
-			bson.D{
-				{
-					"$skip",
-					int64((req.PageIndex - 1) * req.PageSize),
-				},
-			},
-			bson.D{
-				{
-					"$limit",
-					int64(req.PageSize),
-				},
-			},
-		}
-	} else {
+	} else if req.TaskType == "审核" {
 		filter["permissions.checker.id"] = req.UserID
-		pipe = mongo.Pipeline{
-			bson.D{
-				{
-					"$match",
-					filter,
-				},
-			},
-			bson.D{
-				{
-					"$addFields",
-					bson.D{
-						{
-							"statusSort",
-							bson.D{
-								{
-									"$switch",
-									bson.D{
-										{
-											"branches",
-											bson.A{
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusChecking}},
-														}},
-													{"then", 1},
-												},
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusPassed}},
-														}},
-													{"then", 2},
-												},
-												bson.D{
-													{"case",
-														bson.D{
-															{"$eq", bson.A{"$status", model.TaskStatusFailed}},
-														}},
-													{"then", 3},
-												},
-											},
-										},
-										{
-											"default",
-											100.0,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			bson.D{
-				{
-					"$sort",
-					bson.D{
-						{
-							"statusSort",
-							1,
-						},
-					},
-				},
-			},
-			bson.D{
-				{
-					"$skip",
-					int64((req.PageIndex - 1) * req.PageSize),
-				},
-			},
-			bson.D{
-				{
-					"$limit",
-					int64(req.PageSize),
-				},
-			},
+	} else {
+		filter["$or"] = []bson.M{
+			{"permissions.labeler.id": req.UserID},
+			{"permissions.checker.id": req.UserID},
 		}
 	}
-
-	cursor, err := svc.CollectionTask4.Aggregate(ctx, pipe)
+	cursor, err := svc.CollectionTask4.Find(ctx, filter, buildOptions4(req))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -691,6 +518,19 @@ func (svc *LabelerService) SearchMyTask4(ctx context.Context, req SearchMyTask4R
 	}
 
 	return results, int(count), nil
+}
+
+func buildOptions4(req SearchMyTask4Req) *options.FindOptions {
+	if req.PageIndex < 1 {
+		req.PageIndex = 1
+	}
+	if req.PageSize < 1 {
+		req.PageSize = 10
+	}
+	opts := options.Find().
+		SetLimit(int64(req.PageSize)).
+		SetSkip(int64((req.PageIndex - 1) * req.PageSize))
+	return opts
 }
 
 func (svc *LabelerService) DeleteTask4(ctx context.Context, id primitive.ObjectID) error {
@@ -1016,4 +856,78 @@ func (svc *LabelerService) Task4BatchAllocChecker(ctx context.Context, req Task4
 		return errors.New("分配失败：标注员和审核员不能是同一人")
 	}
 	return nil
+}
+
+type SearchMyTask4CountReq struct {
+	ID       primitive.ObjectID `json:"id"`
+	UserID   string
+	TaskType string `json:"taskType"`
+}
+
+type SearchMyTask4CountRes struct {
+	Labeling int64 `json:"labeling"`
+	Submit   int64 `json:"submit"`
+	Checking int64 `json:"checking"`
+	Passed   int64 `json:"passed"`
+	Failed   int64 `json:"failed"`
+}
+
+func (svc *LabelerService) SearchMyTask4Count(ctx context.Context, req SearchMyTask4CountReq) (SearchMyTask4CountRes, error) {
+	filter := bson.M{
+		"projectId": req.ID,
+	}
+	if req.TaskType == "标注" {
+		filter["permissions.labeler.id"] = req.UserID
+	} else {
+		filter["permissions.checker.id"] = req.UserID
+	}
+	pipe := mongo.Pipeline{
+		bson.D{
+			{
+				"$match",
+				filter,
+			},
+		},
+		bson.D{
+			{
+				"$group",
+				bson.D{
+					{"_id", "$status"},
+					{"count", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+	cursor, err := svc.CollectionTask4.Aggregate(ctx, pipe)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return SearchMyTask4CountRes{}, err
+	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	var results []bson.M
+	if err = cursor.All(ctx, &results); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return SearchMyTask4CountRes{}, err
+	}
+
+	var resp SearchMyTask4CountRes
+	for _, result := range results {
+		count := int64(result["count"].(int32))
+		switch result["_id"] {
+		case model.TaskStatusLabeling:
+			resp.Labeling = count
+		case model.TaskStatusSubmit:
+			resp.Submit = count
+		case model.TaskStatusChecking:
+			resp.Checking = count
+		case model.TaskStatusPassed:
+			resp.Passed = count
+		case model.TaskStatusFailed:
+			resp.Failed = count
+		}
+	}
+	return resp, nil
 }
