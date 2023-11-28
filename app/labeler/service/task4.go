@@ -629,6 +629,7 @@ type GetTask4Req struct {
 	UpdateTimeEnd   string             `json:"updateTimeEnd"`
 	Status          []string           `json:"status"`
 	WorkType        int64              `json:"workType"`
+	ProjectID       string             `json:"projectId"`
 }
 
 type GetTask4Resp struct {
@@ -732,6 +733,9 @@ func buildTask4DetailFilter(req GetTask4Req) bson.M {
 		filter["status"] = bson.M{
 			"$in": req.Status,
 		}
+	}
+	if len(req.ProjectID) > 0 {
+		filter["projectId"] = req.ProjectID
 	}
 	if len(req.Labeler) > 0 {
 		filter["permissions.labeler.id"] = req.Labeler
