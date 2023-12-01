@@ -8,8 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go-admin/app/labeler/model"
+	"go-admin/app/labeler/service"
 	"go-admin/common/log"
 )
 
@@ -22,7 +24,6 @@ func task5AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t5/upload", api.UploadTask5())
 	}
 }
-
 func (api *LabelerAPI) UploadTask5() GinHandler {
 	return func(c *gin.Context) {
 		mf, err := c.MultipartForm()
@@ -32,37 +33,59 @@ func (api *LabelerAPI) UploadTask5() GinHandler {
 			return
 		}
 		files := mf.File["files"]
-		var task5map []map[string][]model.Task5
-
-		var fs []string
-		var filedatamap map[string][]model.Task5
+		var tasks []model.Task5
+		var filenames []string
+		var projectID primitive.ObjectID
 		for _, fh := range files {
 
 			filename := fh.Filename
-			fs = append(fs, filename)
+			filenames = append(filenames, filename)
 			file, _ := fh.Open()
-			d, _ := ioutil.ReadAll(file)
+			d, err := ioutil.ReadAll(file)
+			if err != nil {
+				log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+				response.Error(c, 500, err, "")
+				return
+			}
 			defer func(file multipart.File) {
 				err := file.Close()
 				if err != nil {
-
+					log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+					response.Error(c, 500, err, "")
+					return
 				}
 			}(file)
-			_ = json.Unmarshal(d, &filedatamap)
-
-			task5map = append(task5map, filedatamap)
-
-		}
-		var task5 []model.Task5
-		for _, v := range task5map {
-			for _, v2 := range v {
-				for _, v3 := range v2 {
-					task5 = append(task5, v3)
-				}
+			var filedata model.Task5
+			err = json.Unmarshal(d, &filedata)
+			if err != nil {
+				log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+				response.Error(c, 400, err, "")
+				return
 			}
+			projectID, err = primitive.ObjectIDFromHex(c.Request.FormValue("projectId"))
+			if err != nil {
+				log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+				response.Error(c, 400, err, "")
+				return
+			}
+
+			tasks = append(tasks, filedata)
+
+		}
+		req := service.UploadTask5Req{
+			Task5:     tasks,
+			ProjectID: projectID,
+			Name:      filenames,
+		}
+		resp, err := api.LabelerService.UploadTask5(c.Request.Context(), req)
+		if err != nil {
+
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
 		}
 
-		response.OK(c, task5, "上传成功")
+		response.OK(c, resp, "上传成功")
 	}
 
 }

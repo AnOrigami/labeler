@@ -13,31 +13,36 @@ type Task5 struct {
 	Status      string             `bson:"status" json:"status"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
-	Contents    []ContentText      `json:"contents"`
+	Dialog      []ContentText      `bson:"dialog" json:"dialog"`
 }
 
 type ContentText struct {
-	SessionID    string        `json:"session_id"`
-	TurnID       int           `json:"turn_id"`
-	UserContent  string        `json:"user_content"`
-	BotResponse  string        `json:"bot_response"`
-	States       string        `json:"states"`
-	Actions      []Action      `json:"actions"`
-	CreatedAt    string        `json:"created_at"`
-	ModelOutputs []ModelOutput `json:"model_output"`
-	UserID       string        `json:"user_id"`
-	LikeFlag     string        `json:"like_flag"`
-	Feedback     string        `json:"feedback"`
-	NewAction    string        `json:"new_action"`
-	NewOutputs   []ModelOutput `json:"new_outputs"`
+	SessionID    string        `bson:"sessionId" json:"session_id"`
+	TurnID       int           `bson:"turnId" json:"turn_id"`
+	UserContent  string        `bson:"userContent" json:"user_content"`
+	BotResponse  string        `bson:"botResponse" json:"bot_response"`
+	States       string        `bson:"states" json:"states"`
+	Actions      []Action      `bson:"actions" json:"actions"`
+	CreatedAt    string        `bson:"createdAt" json:"created_at"`
+	ModelOutputs []ModelOutput `bson:"modelOutputs" json:"model_output"`
+	UserID       string        `bson:"userId" json:"user_id"`
+	LikeFlag     string        `bson:"likeFlag" json:"like_flag"`
+	Feedback     string        `bson:"feedback" json:"feedback"`
+	NewAction    []Action      `bson:"newAction" json:"new_action"`
+	NewOutputs   []ModelOutput `bson:"newOutputs" json:"new_outputs"`
+	Entities     []string      `bson:"entities" json:"entities"`
 }
 
 type Action struct {
-	ActionName   string   `json:"action_name"`
-	ActionObject []string `json:"action_object"`
+	ActionName   string   `bson:"actionName" json:"action_name"`
+	ActionObject []Object `bson:"actionObject" json:"action_object"`
 }
 
 type ModelOutput struct {
-	Action  string `json:"action"`
-	Content string `json:"content"`
+	Action  string `bson:"action" json:"action"`
+	Content string `bson:"content" json:"content"`
+}
+type Object struct {
+	ObjectName    string `bson:"objectName" json:"object_name"`
+	ObjectContent string `bson:"objectContent" json:"object_content"`
 }
