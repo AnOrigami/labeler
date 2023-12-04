@@ -767,204 +767,201 @@ func (svc *LabelerService) SearchMyTask5Count(ctx context.Context, req SearchMyT
 }
 
 type Node struct {
-	Value    string
-	Children []Node
+	Value    string `json:"value"`
+	Children []Node `json:"children"`
 }
 
-var ActionTags = Node{
-	Value: "动作",
-	Children: []Node{
-		{
-			Value: "提问",
-			Children: []Node{
-				{
-					Value: "短焦问句",
-					Children: []Node{
-						{
-							Value:    "以`结果问句1`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`结果问句2`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`结果问句3`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`量尺问句1`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`量尺问句2`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`量尺问句3`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "提问对来访者来说满分是什么样的",
-							Children: nil,
-						},
-						{
-							Value:    "以`例外问句1`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`例外问句2`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`奇迹问句`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`应对问句`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "以`关系问句`的方式进行提问",
-							Children: nil,
-						},
-						{
-							Value:    "提问如果ta做出改变的话，来访者会有什么不同",
-							Children: nil,
-						},
+var ActionTags = []Node{
+	{
+		Value: "提问",
+		Children: []Node{
+			{
+				Value: "短焦问句",
+				Children: []Node{
+					{
+						Value:    "以`结果问句1`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`结果问句2`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`结果问句3`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`量尺问句1`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`量尺问句2`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`量尺问句3`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "提问对来访者来说满分是什么样的",
+						Children: nil,
+					},
+					{
+						Value:    "以`例外问句1`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`例外问句2`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`奇迹问句`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`应对问句`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`关系问句`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "提问如果ta做出改变的话，来访者会有什么不同",
+						Children: nil,
 					},
 				},
-				{
-					Value: "通用问句",
-					Children: []Node{
-						{
-							Value:    "提问来访者想先谈论哪个话题",
-							Children: nil,
-						},
-						{
-							Value:    "提问描述具体事例",
-							Children: nil,
-						},
-						{
-							Value:    "提问情绪的原因",
-							Children: nil,
-						},
-						{
-							Value:    "提问来访者当下的情绪/感受",
-							Children: nil,
-						},
-						{
-							Value:    "提问来访者对某事例的感受",
-							Children: nil,
-						},
-						{
-							Value:    "提问来访者对某事例将采取的做法",
-							Children: nil,
-						},
-						{
-							Value:    "提问来访者对某事例的想法",
-							Children: nil,
-						},
-						{
-							Value:    "提问当下的事例对来访者的影响",
-							Children: nil,
-						},
-						{
-							Value:    "提问某想法对来访者的影响",
-							Children: nil,
-						},
-						{
-							Value:    "提问某行为对来访者的影响",
-							Children: nil,
-						},
-						{
-							Value:    "提问身边资源有哪些",
-							Children: nil,
-						},
-						{
-							Value:    "提问自身优势有哪些",
-							Children: nil,
-						},
-						{
-							Value:    "提问来访者的期待",
-							Children: nil,
-						},
-						{
-							Value:    "提问那我们可以一起探索一下。可以和我说说你最近的生活吗？",
-							Children: nil,
-						},
-						{
-							Value:    "提问来访者需要什么帮助",
-							Children: nil,
-						},
-						{
-							Value:    "追问模糊信息",
-							Children: nil,
-						},
-						{
-							Value:    "追问还有吗？",
-							Children: nil,
-						},
+			},
+			{
+				Value: "通用问句",
+				Children: []Node{
+					{
+						Value:    "提问来访者想先谈论哪个话题",
+						Children: nil,
+					},
+					{
+						Value:    "提问描述具体事例",
+						Children: nil,
+					},
+					{
+						Value:    "提问情绪的原因",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者当下的情绪/感受",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者对某事例的感受",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者对某事例将采取的做法",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者对某事例的想法",
+						Children: nil,
+					},
+					{
+						Value:    "提问当下的事例对来访者的影响",
+						Children: nil,
+					},
+					{
+						Value:    "提问某想法对来访者的影响",
+						Children: nil,
+					},
+					{
+						Value:    "提问某行为对来访者的影响",
+						Children: nil,
+					},
+					{
+						Value:    "提问身边资源有哪些",
+						Children: nil,
+					},
+					{
+						Value:    "提问自身优势有哪些",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者的期待",
+						Children: nil,
+					},
+					{
+						Value:    "提问那我们可以一起探索一下。可以和我说说你最近的生活吗？",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者需要什么帮助",
+						Children: nil,
+					},
+					{
+						Value:    "追问模糊信息",
+						Children: nil,
+					},
+					{
+						Value:    "追问还有吗？",
+						Children: nil,
 					},
 				},
 			},
 		},
-		{
-			Value: "回应",
-			Children: []Node{
-				{
-					Value:    "总结或重复",
-					Children: nil,
-				},
-				{
-					Value:    "反馈",
-					Children: nil,
-				},
-				{
-					Value:    "一般化",
-					Children: nil,
-				},
-				{
-					Value:    "赞美",
-					Children: nil,
-				},
-				{
-					Value:    "鼓励",
-					Children: nil,
-				},
-				{
-					Value:    "安全岛技术",
-					Children: nil,
-				},
+	},
+	{
+		Value: "回应",
+		Children: []Node{
+			{
+				Value:    "总结或重复",
+				Children: nil,
+			},
+			{
+				Value:    "反馈",
+				Children: nil,
+			},
+			{
+				Value:    "一般化",
+				Children: nil,
+			},
+			{
+				Value:    "赞美",
+				Children: nil,
+			},
+			{
+				Value:    "鼓励",
+				Children: nil,
+			},
+			{
+				Value:    "安全岛技术",
+				Children: nil,
 			},
 		},
-		{
-			Value:    "解释、分析",
-			Children: nil,
-		},
-		{
-			Value:    "提供思路、心理作业",
-			Children: nil,
-		},
-		{
-			Value:    "心理科普",
-			Children: nil,
-		},
-		{
-			Value:    "引导回主题",
-			Children: nil,
-		},
-		{
-			Value:    "确认主题",
-			Children: nil,
-		},
-		{
-			Value:    "提示如果存在安全风险，请联系线下相关机构或组织。保护自身及他人人身财产安全",
-			Children: nil,
-		},
-		{
-			Value:    "其他",
-			Children: nil,
-		},
+	},
+	{
+		Value:    "解释、分析",
+		Children: nil,
+	},
+	{
+		Value:    "提供思路、心理作业",
+		Children: nil,
+	},
+	{
+		Value:    "心理科普",
+		Children: nil,
+	},
+	{
+		Value:    "引导回主题",
+		Children: nil,
+	},
+	{
+		Value:    "确认主题",
+		Children: nil,
+	},
+	{
+		Value:    "提示如果存在安全风险，请联系线下相关机构或组织。保护自身及他人人身财产安全",
+		Children: nil,
+	},
+	{
+		Value:    "其他",
+		Children: nil,
 	},
 }
