@@ -335,16 +335,16 @@ func (svc *LabelerService) BatchSetTask5Status(ctx context.Context, req BatchSet
 		}
 	}
 	normalStatusMap := map[string][]string{
-		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
-		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
-		model.TaskStatusChecking: {model.TaskStatusSubmit, model.TaskStatusFailed},
-		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusSubmit, model.TaskStatusFailed},
+		//model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		//model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		//model.TaskStatusChecking: {model.TaskStatusSubmit, model.TaskStatusFailed},
+		model.TaskStatusSubmit: {model.TaskStatusLabeling, model.TaskStatusSubmit /*, model.TaskStatusFailed*/},
 	}
 	specialStatusMap := map[string][]string{
-		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
-		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
-		model.TaskStatusChecking: {model.TaskStatusFailed},
-		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusAllocate, model.TaskStatusFailed},
+		//model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
+		//model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
+		//model.TaskStatusChecking: {model.TaskStatusFailed},
+		model.TaskStatusSubmit: {model.TaskStatusLabeling, model.TaskStatusAllocate, model.TaskStatusSubmit /*, model.TaskStatusFailed*/},
 	}
 
 	//任务状态为{未分配}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
