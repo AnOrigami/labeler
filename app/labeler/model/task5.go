@@ -39,8 +39,8 @@ type EntityOption struct {
 }
 
 type Action struct {
-	ActionName    string   `bson:"actionName" json:"action_name"`
-	ActionSummary []Object `bson:"actionObject" json:"action_summary"`
+	ActionName   string   `bson:"actionName" json:"action_name"`
+	ActionObject []Object `bson:"actionObject" json:"action_object"`
 }
 
 type ModelOutput struct {
@@ -49,5 +49,5 @@ type ModelOutput struct {
 }
 type Object struct {
 	ObjectName    string `bson:"objectName" json:"object_name"`
-	ObjectContent string `bson:"objectContent" json:"object_content"`
+	ObjectSummary string `bson:"objectSummary" json:"object_summary"`
 }
