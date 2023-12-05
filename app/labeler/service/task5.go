@@ -550,7 +550,6 @@ type GetTask5Req struct {
 	UpdateTimeEnd   string             `json:"updateTimeEnd"`
 	Status          []string           `json:"status"`
 	WorkType        int64              `json:"workType"`
-	ProjectID       string             `json:"projectId"`
 }
 
 type GetTask5Resp struct {
@@ -598,6 +597,7 @@ func (svc *LabelerService) GetTask5(ctx context.Context, req GetTask5Req, p *act
 	}
 	if req.WorkType == 0 {
 		filter = buildTask5DetailFilter(req)
+		filter["projectId"] = task.ProjectID
 	}
 	if task.Permissions.Labeler != nil {
 		ids = append(ids, task.Permissions.Labeler.ID)
@@ -650,14 +650,13 @@ func (svc *LabelerService) GetTask5(ctx context.Context, req GetTask5Req, p *act
 
 func buildTask5DetailFilter(req GetTask5Req) bson.M {
 	filter := bson.M{}
+
 	if len(req.Status) > 0 {
 		filter["status"] = bson.M{
 			"$in": req.Status,
 		}
 	}
-	if len(req.ProjectID) > 0 {
-		filter["projectId"] = req.ProjectID
-	}
+
 	if len(req.Labeler) > 0 {
 		filter["permissions.labeler.id"] = req.Labeler
 	}
