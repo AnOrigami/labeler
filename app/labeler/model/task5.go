@@ -31,11 +31,14 @@ type ContentText struct {
 	NewAction    []Action       `bson:"newAction" json:"new_action"`
 	NewOutputs   []ModelOutput  `bson:"newOutputs" json:"new_outputs"`
 	Entities     []EntityOption `bson:"entities" json:"entities"`
+	Edit         bool           `bson:"edit" json:"edit"`
 }
 type EntityOption struct {
 	Class         string `bson:"class" json:"class"`
+	Num           int    `json:"num" json:"num"`
 	Type          string `bson:"type" json:"type"`
 	ObjectSummary string `bson:"objectSummary" json:"object_summary"`
+	ClassType     string `bson:"classType" json:"classType"`
 }
 
 type Action struct {

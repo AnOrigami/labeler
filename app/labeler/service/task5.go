@@ -49,6 +49,10 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 		for j, row2 := range row.Dialog {
 			row.Dialog[j].NewAction = row2.Actions
 			row.Dialog[j].NewOutputs = row2.ModelOutputs
+			for k, row3 := range row2.Entities {
+				numString := strconv.Itoa(row3.Num)
+				row.Dialog[j].Entities[k].ClassType = row3.Class + numString + "[" + row3.Type + "]"
+			}
 
 		}
 		tasks[i] = model.Task5{
