@@ -88,7 +88,7 @@ func (api *LabelerAPI) UploadTask5() GinHandler {
 
 		}
 		req := service.UploadTask5Req{
-			Task5:     tasks,
+			Tasks5:    tasks,
 			ProjectID: projectID,
 			Name:      filenames,
 		}

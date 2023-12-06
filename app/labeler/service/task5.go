@@ -26,7 +26,7 @@ import (
 )
 
 type UploadTask5Req struct {
-	Task5     []model.Task5
+	Tasks5    []model.Task5
 	ProjectID primitive.ObjectID
 	Name      []string
 }
@@ -36,36 +36,57 @@ type UploadTask5Resp struct {
 }
 
 func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) (UploadTask5Resp, error) {
-	var task model.Task5
-	if err := svc.CollectionProject5.FindOne(ctx, bson.M{"_id": req.ProjectID}).Decode(&task); err != nil {
+	var project5 model.Project5
+	if err := svc.CollectionProject5.FindOne(ctx, bson.M{"_id": req.ProjectID}).Decode(&project5); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return UploadTask5Resp{}, errors.New("项目不存在")
 		}
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return UploadTask5Resp{}, err
 	}
-	tasks := make([]any, len(req.Task5))
-	for i, row := range req.Task5 {
-		for j, row2 := range row.Dialog {
-			row.Dialog[j].NewAction = row2.Actions
-			row.Dialog[j].NewOutputs = row2.ModelOutputs
-			for k, row3 := range row2.Entities {
-				numString := strconv.Itoa(row3.Num)
-				row.Dialog[j].Entities[k].ClassType = row3.Class + numString + "[" + row3.Type + "]"
+	insertTasks := make([]any, len(req.Tasks5))
+	for i, oneTask5 := range req.Tasks5 {
+		for j, oneDialog := range oneTask5.Dialog {
+
+			oneTask5.Dialog[j].NewAction = oneDialog.Actions
+			oneTask5.Dialog[j].NewOutputs = oneDialog.ModelOutputs
+			for k, entity := range oneDialog.Entities {
+				numString := strconv.Itoa(entity.Num)
+				oneTask5.Dialog[j].Entities[k].ClassType = entity.Class + numString + "[" + entity.Type + "]"
+			}
+			for _, action := range oneDialog.Actions {
+				if len(action.ActionObject) == 0 {
+					oneTask5.Dialog[j].Actions[i].ActionObject = append(oneTask5.Dialog[j].Actions[i].ActionObject, model.Object{})
+				}
+			}
+			//使用actions.action_object添加entity
+			for _, action := range oneDialog.Actions {
+				var insertOneEntity = model.EntityOption{}
+				insertOneEntity = model.EntityOption{
+					ObjectSummary: action.ActionObject[0].ObjectSummary,
+					ClassType:     action.ActionObject[0].ObjectName,
+				}
+				//for _, row5 := range action.ActionObject {
+				//	insertOneEntity = model.EntityOption{
+				//		ObjectSummary: row5.ObjectSummary,
+				//		ClassType:     row5.ObjectName,
+				//	}
+				//}
+				oneTask5.Dialog[j].Entities = append(oneTask5.Dialog[j].Entities, insertOneEntity)
 			}
 
 		}
-		tasks[i] = model.Task5{
+		insertTasks[i] = model.Task5{
 			ID:          primitive.NewObjectID(),
 			Name:        req.Name[i],
 			ProjectID:   req.ProjectID,
 			Status:      model.TaskStatusAllocate,
 			Permissions: model.Permissions{},
 			UpdateTime:  util.Datetime(time.Now()),
-			Dialog:      row.Dialog,
+			Dialog:      oneTask5.Dialog,
 		}
 	}
-	result, err := svc.CollectionTask5.InsertMany(ctx, tasks)
+	result, err := svc.CollectionTask5.InsertMany(ctx, insertTasks)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return UploadTask5Resp{}, err
@@ -944,8 +965,193 @@ var ActionTags = []Node{
 		Children: nil,
 	},
 	{
-		Value:    "提供思路、心理作业",
-		Children: nil,
+		Value: "提供思路、心理作业",
+		Children: []Node{
+			{
+				Value: "思考类",
+				Children: []Node{
+					{
+						Value:    "生命意义、人生价值",
+						Children: nil,
+					},
+					{
+						Value:    "现实类的问题",
+						Children: nil,
+					},
+					{
+						Value:    "过往经历",
+						Children: nil,
+					},
+				},
+			},
+			{
+				Value: "书写类",
+				Children: []Node{
+					{
+						Value:    "对未来",
+						Children: nil,
+					},
+					{
+						Value:    "当下发生",
+						Children: nil,
+					},
+					{
+						Value:    "过往经历",
+						Children: nil,
+					},
+				},
+			},
+			{
+				Value: "行为类",
+				Children: []Node{
+					{
+						Value:    "运动",
+						Children: nil,
+					},
+					{
+						Value:    "音乐疗法",
+						Children: nil,
+					},
+					{
+						Value: "绘画类",
+						Children: []Node{
+							{
+								Value:    "画画",
+								Children: nil,
+							},
+							{
+								Value:    "家庭关系图",
+								Children: nil,
+							},
+							{
+								Value:    "其他",
+								Children: nil,
+							},
+						},
+					},
+					{
+						Value: "情绪宣泄",
+						Children: []Node{
+							{
+								Value:    "激烈运动",
+								Children: nil,
+							},
+							{
+								Value:    "呐喊",
+								Children: nil,
+							},
+							{
+								Value:    "蹦迪",
+								Children: nil,
+							},
+							{
+								Value:    "极限运动",
+								Children: nil,
+							},
+							{
+								Value:    "唱歌",
+								Children: nil,
+							},
+							{
+								Value:    "撕纸",
+								Children: nil,
+							},
+							{
+								Value:    "其他",
+								Children: nil,
+							},
+						},
+					},
+					{
+						Value: "身心疗愈",
+						Children: []Node{
+							{
+								Value:    "正念",
+								Children: nil,
+							},
+							{
+								Value:    "冥想",
+								Children: nil,
+							},
+							{
+								Value:    "催眠",
+								Children: nil,
+							},
+							{
+								Value:    "呼吸",
+								Children: nil,
+							},
+							{
+								Value:    "肌肉放松",
+								Children: nil,
+							},
+						},
+					},
+					{
+						Value: "艺术疗愈",
+						Children: []Node{
+							{
+								Value:    "阅读",
+								Children: nil,
+							},
+							{
+								Value:    "书法",
+								Children: nil,
+							},
+							{
+								Value:    "茶道",
+								Children: nil,
+							},
+							{
+								Value:    "花道",
+								Children: nil,
+							},
+							{
+								Value:    "香道",
+								Children: nil,
+							},
+							{
+								Value:    "陶艺",
+								Children: nil,
+							},
+						},
+					},
+					{
+						Value:    "自我暗示",
+						Children: nil,
+					},
+					{
+						Value: "寻求他人帮助",
+						Children: []Node{
+							{
+								Value:    "亲密关系支持",
+								Children: nil,
+							},
+							{
+								Value:    "兴趣爱好小组",
+								Children: nil,
+							},
+							{
+								Value:    "专业性支持",
+								Children: nil,
+							},
+							{
+								Value:    "其他社会性支持",
+								Children: nil,
+							},
+						},
+					},
+					{
+						Value:    "模拟练习",
+						Children: nil,
+					},
+				},
+			},
+			{
+				Value:    "其他",
+				Children: nil,
+			},
+		},
 	},
 	{
 		Value:    "心理科普",
