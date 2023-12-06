@@ -67,6 +67,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 					ObjectSummary: action.ActionObject[0].ObjectSummary,
 					ClassType:     action.ActionObject[0].ObjectName,
 				}
+				//判断ObjectSummary是否为空，为空直接不添加
 				if insertOneEntity.ObjectSummary != "" {
 					var isEqualObjectSummary = false
 					//判断ObjectSummary是否存在相等的
@@ -81,17 +82,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 					}
 				}
 			}
-			//uniqueEntities := make(map[string]model.EntityOption)
-			//for i, v := range oneTask5.Dialog[j].Entities {
-			//	if existingSummary, ok := uniqueEntities[v.ObjectSummary]; ok {
-			//		// 如果已存在相同ID的记录，则比较B字段的值
-			//		if len(v.ClassType) > len(existingSummary.ClassType) {
-			//			uniqueEntities[v.ObjectSummary] = person
-			//		}
-			//	} else {
-			//		uniqueEntities[person.ID] = person
-			//	}
-			//}
+
 		}
 		insertTasks[i] = model.Task5{
 			ID:          primitive.NewObjectID(),
