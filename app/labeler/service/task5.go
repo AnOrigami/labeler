@@ -45,6 +45,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 		return UploadTask5Resp{}, err
 	}
 	insertTasks := make([]any, len(req.Tasks5))
+
 	for i, oneTask5 := range req.Tasks5 {
 		for j, oneDialog := range oneTask5.Dialog {
 
@@ -66,15 +67,31 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 					ObjectSummary: action.ActionObject[0].ObjectSummary,
 					ClassType:     action.ActionObject[0].ObjectName,
 				}
-				//for _, row5 := range action.ActionObject {
-				//	insertOneEntity = model.EntityOption{
-				//		ObjectSummary: row5.ObjectSummary,
-				//		ClassType:     row5.ObjectName,
-				//	}
-				//}
-				oneTask5.Dialog[j].Entities = append(oneTask5.Dialog[j].Entities, insertOneEntity)
+				if insertOneEntity.ObjectSummary != "" {
+					var isEqualObjectSummary = false
+					//判断ObjectSummary是否存在相等的
+					for p, taskEntites := range oneTask5.Dialog[j].Entities {
+						if taskEntites.ObjectSummary == insertOneEntity.ObjectSummary && len(insertOneEntity.ClassType) < len(taskEntites.ObjectSummary) {
+							oneTask5.Dialog[j].Entities[p].ClassType = insertOneEntity.ClassType
+							isEqualObjectSummary = true
+						}
+					}
+					if isEqualObjectSummary == false {
+						oneTask5.Dialog[j].Entities = append(oneTask5.Dialog[j].Entities, insertOneEntity)
+					}
+				}
 			}
-
+			//uniqueEntities := make(map[string]model.EntityOption)
+			//for i, v := range oneTask5.Dialog[j].Entities {
+			//	if existingSummary, ok := uniqueEntities[v.ObjectSummary]; ok {
+			//		// 如果已存在相同ID的记录，则比较B字段的值
+			//		if len(v.ClassType) > len(existingSummary.ClassType) {
+			//			uniqueEntities[v.ObjectSummary] = person
+			//		}
+			//	} else {
+			//		uniqueEntities[person.ID] = person
+			//	}
+			//}
 		}
 		insertTasks[i] = model.Task5{
 			ID:          primitive.NewObjectID(),
