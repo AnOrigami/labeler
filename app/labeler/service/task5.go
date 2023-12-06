@@ -55,9 +55,9 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 				numString := strconv.Itoa(entity.Num)
 				oneTask5.Dialog[j].Entities[k].ClassType = entity.Class + numString + "[" + entity.Type + "]"
 			}
-			for _, action := range oneDialog.Actions {
+			for i2, action := range oneDialog.Actions {
 				if len(action.ActionObject) == 0 {
-					oneTask5.Dialog[j].Actions[i].ActionObject = append(oneTask5.Dialog[j].Actions[i].ActionObject, model.Object{})
+					oneTask5.Dialog[j].Actions[i2].ActionObject = append(oneTask5.Dialog[j].Actions[i].ActionObject, model.Object{})
 				}
 			}
 			//使用actions.action_object添加entity
@@ -69,21 +69,28 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 				}
 				//判断ObjectSummary是否为空，为空直接不添加
 				if insertOneEntity.ObjectSummary != "" {
-					var isEqualObjectSummary = false
-					//判断ObjectSummary是否存在相等的
-					for p, taskEntites := range oneTask5.Dialog[j].Entities {
-						if taskEntites.ObjectSummary == insertOneEntity.ObjectSummary && len(insertOneEntity.ClassType) < len(taskEntites.ObjectSummary) {
-							oneTask5.Dialog[j].Entities[p].ClassType = insertOneEntity.ClassType
-							isEqualObjectSummary = true
-						}
-					}
-					if isEqualObjectSummary == false {
-						oneTask5.Dialog[j].Entities = append(oneTask5.Dialog[j].Entities, insertOneEntity)
-					}
+					oneTask5.Dialog[j].Entities = append(oneTask5.Dialog[j].Entities, insertOneEntity)
 				}
 			}
 
+			uniqueEntities := make(map[string]model.EntityOption)
+			for _, v := range oneTask5.Dialog[j].Entities {
+				if existingEntity, ok := uniqueEntities[v.ObjectSummary]; ok {
+					// 如果已存在相同ID的记录，则比较B字段的值
+					if len(v.ClassType) < len(existingEntity.ClassType) {
+						uniqueEntities[v.ObjectSummary] = v
+					}
+				} else {
+					uniqueEntities[v.ObjectSummary] = v
+				}
+			}
+			uniqueEntitiesArray := make([]model.EntityOption, 0, len(uniqueEntities))
+			for _, v := range uniqueEntities {
+				uniqueEntitiesArray = append(uniqueEntitiesArray, v)
+			}
+			oneTask5.Dialog[j].Entities = uniqueEntitiesArray
 		}
+
 		insertTasks[i] = model.Task5{
 			ID:          primitive.NewObjectID(),
 			Name:        req.Name[i],
