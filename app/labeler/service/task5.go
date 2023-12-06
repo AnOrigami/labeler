@@ -57,7 +57,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 			}
 			for i2, action := range oneDialog.Actions {
 				if len(action.ActionObject) == 0 {
-					oneTask5.Dialog[j].Actions[i2].ActionObject = append(oneTask5.Dialog[j].Actions[i].ActionObject, model.Object{})
+					oneTask5.Dialog[j].Actions[i2].ActionObject = append(oneTask5.Dialog[j].Actions[i2].ActionObject, model.Object{})
 				}
 			}
 			//使用actions.action_object添加entity
