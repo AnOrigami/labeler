@@ -312,11 +312,10 @@ func (svc *LabelerService) ResetTasks5(ctx context.Context, req ResetTasks5Req) 
 }
 
 type UpdateTask5Req struct {
-	UserID        string                  `json:"-"`
-	UserDataScope string                  `json:"-"`
-	ID            primitive.ObjectID      `json:"id"`
-	Output        []model.Task4OutputItem `json:"output"`
-	Dialog        []model.ContentText     `json:"dialog"`
+	UserID        string              `json:"-"`
+	UserDataScope string              `json:"-"`
+	ID            primitive.ObjectID  `json:"id"`
+	Dialog        []model.ContentText `json:"dialog"`
 }
 
 func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) (model.Task5, error) {
