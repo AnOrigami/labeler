@@ -805,149 +805,120 @@ func (svc *LabelerService) SearchMyTask5Count(ctx context.Context, req SearchMyT
 }
 
 type Node struct {
-	Label    string `json:"label"`
 	Value    string `json:"value"`
 	Children []Node `json:"children"`
 }
 
 var ActionTags = []Node{
 	{
-		Label: "提问",
-		Value: "1",
+		Value: "提问",
 		Children: []Node{
 			{
-				Label: "短焦问句",
-				Value: "10",
+				Value: "短焦问句",
 				Children: []Node{
 					{
-						Label:    "提问对来访者来说满分是什么样的",
-						Value:    "22",
+						Value:    "提问对来访者来说满分是什么样的",
 						Children: nil,
 					},
 					{
-						Label:    "提问如果ta做出改变的话，来访者会有什么不同",
-						Value:    "23",
+						Value:    "提问如果ta做出改变的话，来访者会有什么不同",
 						Children: nil,
 					},
 					{
-						Label:    "以`结果问句`的方式进行提问",
-						Value:    "24",
+						Value:    "以`结果问句`的方式进行提问",
 						Children: nil,
 					},
 					{
-						Label:    "以`量尺问句`的方式进行提问",
-						Value:    "25",
+						Value:    "以`量尺问句`的方式进行提问",
 						Children: nil,
 					},
 					{
-						Label:    "以`例外问句`的方式进行提问",
-						Value:    "26",
+						Value:    "以`例外问句`的方式进行提问",
 						Children: nil,
 					},
 					{
-						Label:    "以`奇迹问句`的方式进行提问",
-						Value:    "27",
+						Value:    "以`奇迹问句`的方式进行提问",
 						Children: nil,
 					},
 					{
-						Label:    "以`应对问句`的方式进行提问",
-						Value:    "28",
+						Value:    "以`应对问句`的方式进行提问",
 						Children: nil,
 					},
 					{
-						Label:    "以`关系问句`的方式进行提问",
-						Value:    "29",
+						Value:    "以`关系问句`的方式进行提问",
 						Children: nil,
 					},
 				},
 			},
 			{
-				Label: "通用问句",
-				Value: "11",
+				Value: "通用问句",
 				Children: []Node{
 					{
-						Label:    "提问来访者想先谈论哪个话题",
-						Value:    "30",
+						Value:    "提问来访者想先谈论哪个话题",
 						Children: nil,
 					},
 					{
-						Label:    "提问描述具体事例",
-						Value:    "31",
+						Value:    "提问描述具体事例",
 						Children: nil,
 					},
 					{
-						Label:    "提问情绪的原因",
-						Value:    "32",
+						Value:    "提问情绪的原因",
 						Children: nil,
 					},
 					{
-						Label:    "提问来访者当下的情绪/感受",
-						Value:    "33",
+						Value:    "提问来访者当下的情绪/感受",
 						Children: nil,
 					},
 					{
-						Label:    "提问来访者对某事例的感受",
-						Value:    "34",
+						Value:    "提问来访者对某事例的感受",
 						Children: nil,
 					},
 					{
-						Label:    "提问来访者对某事例将采取的做法",
-						Value:    "35",
+						Value:    "提问来访者对某事例将采取的做法",
 						Children: nil,
 					},
 					{
-						Label:    "提问来访者对某事例的想法",
-						Value:    "36",
+						Value:    "提问来访者对某事例的想法",
 						Children: nil,
 					},
 					{
-						Label:    "提问当下的事例对来访者的影响",
-						Value:    "37",
+						Value:    "提问当下的事例对来访者的影响",
 						Children: nil,
 					},
 					{
-						Label:    "提问某想法对来访者的影响",
-						Value:    "38",
+						Value:    "提问某想法对来访者的影响",
 						Children: nil,
 					},
 					{
-						Label:    "提问某行为对来访者的影响",
-						Value:    "39",
+						Value:    "提问某行为对来访者的影响",
 						Children: nil,
 					},
 					{
-						Label:    "提问身边资源有哪些",
-						Value:    "40",
+						Value:    "提问身边资源有哪些",
 						Children: nil,
 					},
 					{
-						Label:    "提问自身优势有哪些",
-						Value:    "41",
+						Value:    "提问自身优势有哪些",
 						Children: nil,
 					},
 					{
-						Label:    "提问来访者的期待",
-						Value:    "42",
+						Value:    "提问来访者的期待",
 						Children: nil,
 					},
 					{
-						Label:    "提问那我们可以一起探索一下。可以和我说说你最近的生活吗？",
-						Value:    "43",
+						Value:    "提问那我们可以一起探索一下。可以和我说说你最近的生活吗？",
 						Children: nil,
 					},
 					{
-						Label:    "提问来访者需要什么帮助",
-						Value:    "44",
+						Value:    "提问来访者需要什么帮助",
 						Children: nil,
 					},
 					{
-						Label:    "追问模糊信息",
-						Value:    "45",
+						Value:    "追问模糊信息",
 						Children: nil,
 					},
 					{
-						Label:    "追问还有吗？",
-						Value:    "46",
+						Value:    "追问还有吗？",
 						Children: nil,
 					},
 				},
@@ -955,303 +926,245 @@ var ActionTags = []Node{
 		},
 	},
 	{
-		Label: "回应",
-		Value: "2",
+		Value: "回应",
 		Children: []Node{
 			{
-				Label:    "总结或重复",
-				Value:    "12",
+				Value:    "总结或重复",
 				Children: nil,
 			},
 			{
-				Label:    "反馈",
-				Value:    "13",
+				Value:    "反馈",
 				Children: nil,
 			},
 			{
-				Label:    "一般化",
-				Value:    "14",
+				Value:    "一般化",
 				Children: nil,
 			},
 			{
-				Label:    "赞美",
-				Value:    "15",
+				Value:    "赞美",
 				Children: nil,
 			},
 			{
-				Label:    "鼓励",
-				Value:    "16",
+				Value:    "鼓励",
 				Children: nil,
 			},
 			{
-				Label:    "安全岛技术",
-				Value:    "17",
+				Value:    "安全岛技术",
 				Children: nil,
 			},
 		},
 	},
 	{
-		Label:    "解释、分析",
-		Value:    "3",
+		Value:    "解释、分析",
 		Children: nil,
 	},
 	{
-		Label: "提供思路、心理作业",
-		Value: "4",
+		Value: "提供思路、心理作业",
 		Children: []Node{
 			{
-				Label: "思考类",
-				Value: "18",
+				Value: "思考类",
 				Children: []Node{
 					{
-						Label:    "生命意义、人生价值",
-						Value:    "47",
+						Value:    "生命意义、人生价值",
 						Children: nil,
 					},
 					{
-						Label:    "现实类的问题",
-						Value:    "48",
+						Value:    "现实类的问题",
 						Children: nil,
 					},
 					{
-						Label:    "过往经历",
-						Value:    "49",
+						Value:    "过往经历",
 						Children: nil,
 					},
 				},
 			},
 			{
-				Label: "书写类",
-				Value: "19",
+				Value: "书写类",
 				Children: []Node{
 					{
-						Label:    "对未来",
-						Value:    "50",
+						Value:    "对未来",
 						Children: nil,
 					},
 					{
-						Label:    "当下发生",
-						Value:    "51",
+						Value:    "当下发生",
 						Children: nil,
 					},
 					{
-						Label:    "过往经历",
-						Value:    "52",
+						Value:    "过往经历",
 						Children: nil,
 					},
 				},
 			},
 			{
-				Label: "行为类",
-				Value: "20",
+				Value: "行为类",
 				Children: []Node{
 					{
-						Label:    "运动",
-						Value:    "53",
+						Value:    "运动",
 						Children: nil,
 					},
 					{
-						Label:    "音乐疗法",
-						Value:    "54",
+						Value:    "音乐疗法",
 						Children: nil,
 					},
 					{
-						Label: "绘画类",
-						Value: "55",
+						Value: "绘画类",
 						Children: []Node{
 							{
-								Label:    "画画",
-								Value:    "62",
+								Value:    "画画",
 								Children: nil,
 							},
 							{
-								Label:    "家庭关系图",
-								Value:    "63",
+								Value:    "家庭关系图",
 								Children: nil,
 							},
 							{
-								Label:    "其他",
-								Value:    "64",
+								Value:    "提供思路、心理作业/行为类/绘画类/其他",
 								Children: nil,
 							},
 						},
 					},
 					{
-						Label: "情绪宣泄",
-						Value: "56",
+						Value: "情绪宣泄",
 						Children: []Node{
 							{
-								Label:    "激烈运动",
-								Value:    "65",
+								Value:    "激烈运动",
 								Children: nil,
 							},
 							{
-								Label:    "呐喊",
-								Value:    "66",
+								Value:    "呐喊",
 								Children: nil,
 							},
 							{
-								Label:    "蹦迪",
-								Value:    "67",
+								Value:    "蹦迪",
 								Children: nil,
 							},
 							{
-								Label:    "极限运动",
-								Value:    "68",
+								Value:    "极限运动",
 								Children: nil,
 							},
 							{
-								Label:    "唱歌",
-								Value:    "69",
+								Value:    "唱歌",
 								Children: nil,
 							},
 							{
-								Label:    "撕纸",
-								Value:    "70",
+								Value:    "撕纸",
 								Children: nil,
 							},
 							{
-								Label:    "其他",
-								Value:    "71",
+								Value:    "提供思路、心理作业/行为类/情绪宣泄/其他",
 								Children: nil,
 							},
 						},
 					},
 					{
-						Label: "身心疗愈",
-						Value: "57",
+						Value: "身心疗愈",
 						Children: []Node{
 							{
-								Label:    "正念",
-								Value:    "72",
+								Value:    "正念",
 								Children: nil,
 							},
 							{
-								Label:    "冥想",
-								Value:    "73",
+								Value:    "冥想",
 								Children: nil,
 							},
 							{
-								Label:    "催眠",
-								Value:    "74",
+								Value:    "催眠",
 								Children: nil,
 							},
 							{
-								Label:    "呼吸",
-								Value:    "75",
+								Value:    "呼吸",
 								Children: nil,
 							},
 							{
-								Label:    "肌肉放松",
-								Value:    "76",
+								Value:    "肌肉放松",
 								Children: nil,
 							},
 						},
 					},
 					{
-						Label: "艺术疗愈",
-						Value: "58",
+						Value: "艺术疗愈",
 						Children: []Node{
 							{
-								Label:    "阅读",
-								Value:    "77",
+								Value:    "阅读",
 								Children: nil,
 							},
 							{
-								Label:    "书法",
-								Value:    "78",
+								Value:    "书法",
 								Children: nil,
 							},
 							{
-								Label:    "茶道",
-								Value:    "79",
+								Value:    "茶道",
 								Children: nil,
 							},
 							{
-								Label:    "花道",
-								Value:    "80",
+								Value:    "花道",
 								Children: nil,
 							},
 							{
-								Label:    "香道",
-								Value:    "81",
+								Value:    "香道",
 								Children: nil,
 							},
 							{
-								Label:    "陶艺",
-								Value:    "82",
+								Value:    "陶艺",
 								Children: nil,
 							},
 						},
 					},
 					{
-						Label:    "自我暗示",
-						Value:    "59",
+						Value:    "自我暗示",
 						Children: nil,
 					},
 					{
-						Label: "寻求他人帮助",
-						Value: "60",
+						Value: "寻求他人帮助",
 						Children: []Node{
 							{
-								Label:    "亲密关系支持",
-								Value:    "83",
+								Value:    "亲密关系支持",
 								Children: nil,
 							},
 							{
-								Label:    "兴趣爱好小组",
-								Value:    "84",
+								Value:    "兴趣爱好小组",
 								Children: nil,
 							},
 							{
-								Label:    "专业性支持",
-								Value:    "85",
+								Value:    "专业性支持",
 								Children: nil,
 							},
 							{
-								Label:    "其他社会性支持",
-								Value:    "86",
+								Value:    "其他社会性支持",
 								Children: nil,
 							},
 						},
 					},
 					{
-						Label:    "模拟练习",
-						Value:    "61",
+						Value:    "模拟练习",
 						Children: nil,
 					},
 				},
 			},
 			{
-				Label:    "其他",
-				Value:    "21",
+				Value:    "提供思路、心理作业/其他",
 				Children: nil,
 			},
 		},
 	},
 	{
-		Label:    "心理科普",
-		Value:    "5",
+		Value:    "心理科普",
 		Children: nil,
 	},
 	{
-		Label:    "引导回主题",
-		Value:    "6",
+		Value:    "引导回主题",
 		Children: nil,
 	},
 	{
-		Label:    "确认主题",
-		Value:    "7",
+		Value:    "确认主题",
 		Children: nil,
 	},
 	{
-		Label:    "提示如果存在安全风险，请联系线下相关机构或组织。保护自身及他人人身财产安全",
-		Value:    "8",
+		Value:    "提示如果存在安全风险，请联系线下相关机构或组织。保护自身及他人人身财产安全",
 		Children: nil,
 	},
 	{
-		Label:    "其他",
-		Value:    "9",
+		Value:    "其他",
 		Children: nil,
 	},
 }
