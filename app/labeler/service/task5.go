@@ -866,7 +866,7 @@ var ActionTags = []Node{
 						Children: nil,
 					},
 					{
-						Value:    "提问来访者当下的情绪/感受",
+						Value:    "提问来访者当下的情绪或感受",
 						Children: nil,
 					},
 					{

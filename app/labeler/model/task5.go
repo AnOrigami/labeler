@@ -46,11 +46,12 @@ type Action struct {
 	ActionObject []Object `bson:"actionObject" json:"action_object"`
 }
 
-type ModelOutput struct {
-	Action  string `bson:"action" json:"action"`
-	Content string `bson:"content" json:"content"`
-}
 type Object struct {
 	ObjectName    string `bson:"objectName" json:"object_name"`
 	ObjectSummary string `bson:"objectSummary" json:"object_summary"`
+}
+
+type ModelOutput struct {
+	Action  string `bson:"action" json:"action"`
+	Content string `bson:"content" json:"content"`
 }
