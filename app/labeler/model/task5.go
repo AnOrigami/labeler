@@ -42,8 +42,10 @@ type EntityOption struct {
 }
 
 type Action struct {
-	ActionName   string   `bson:"actionName" json:"action_name"`
-	ActionObject []Object `bson:"actionObject" json:"action_object"`
+	ActionName     string   `bson:"actionName" json:"action_name"`
+	ActionListNode string   `bson:"actionListNode" json:"actionListNode"`
+	ActionObject   []Object `bson:"actionObject" json:"action_object"`
+	SolutionMethod string   `bson:"solutionMethod" json:"solution_method"`
 }
 
 type Object struct {

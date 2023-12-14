@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +49,13 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 
 	for i, oneTask5 := range req.Tasks5 {
 		for j, oneDialog := range oneTask5.Dialog {
+			for n, action := range oneDialog.Actions {
+				if action.ActionName == "提供思路、心理作业" {
+					oneTask5.Dialog[j].Actions[n].ActionListNode = action.SolutionMethod
+				} else {
+					oneTask5.Dialog[j].Actions[n].ActionListNode = action.ActionName
+				}
+			}
 
 			oneTask5.Dialog[j].NewAction = oneDialog.Actions
 			oneTask5.Dialog[j].NewOutputs = oneDialog.ModelOutputs
@@ -330,7 +338,18 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 	if req.UserDataScope != "1" && req.UserDataScope != "2" && !task.Permissions.IsLabeler(req.UserID) && !task.Permissions.IsChecker(req.UserID) {
 		return model.Task5{}, errors.New("权限不足")
 	}
-
+	for i, oneDialog := range req.Dialog {
+		for j, action := range oneDialog.NewAction {
+			if in(action.ActionListNode, specialNodesList) {
+				req.Dialog[i].NewAction[j].ActionName = "提供思路、心理作业"
+				req.Dialog[i].NewAction[j].SolutionMethod = action.ActionListNode
+			} else {
+				req.Dialog[i].NewAction[j].ActionName = action.ActionListNode
+				req.Dialog[i].NewAction[j].SolutionMethod = ""
+			}
+			req.Dialog[i].NewOutputs[j].Action = req.Dialog[i].NewAction[j].ActionName
+		}
+	}
 	task.Dialog = req.Dialog
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
@@ -345,6 +364,21 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 	}
 	return task, nil
 }
+
+func in(target string, strArray []string) bool {
+	sort.Strings(strArray)
+	index := sort.SearchStrings(strArray, target)
+	if index < len(strArray) && strArray[index] == target {
+		return true
+	}
+	return false
+}
+
+var specialNodesList = []string{
+	"运动", "音乐疗法", "画画", "家庭关系图", "其他绘画类", "激烈运动", "呐喊", "蹦迪", "极限运动", "唱歌",
+	"撕纸", "其他情绪宣泄", "正念", "冥想", "催眠", "呼吸", "肌肉放松", "阅读", "书法", "茶道",
+	"花道", "生命意义、人生价值", "香道", "陶艺", "自我暗示", "亲密关系支持", "兴趣爱好小组", "专业性支持", "其他社会性支持", "模拟练习",
+	"其他提供思路、心理作业", "现实类问题", "过往经历思考类", "对未来", "当下发生", "过往经历书写类"}
 
 type BatchSetTask5StatusReq struct {
 	UserID        string               `json:"-"`
@@ -973,7 +1007,7 @@ var ActionTags = []Node{
 						Children: nil,
 					},
 					{
-						Value:    "过往经历",
+						Value:    "过往经历思考类",
 						Children: nil,
 					},
 				},
@@ -990,7 +1024,7 @@ var ActionTags = []Node{
 						Children: nil,
 					},
 					{
-						Value:    "过往经历",
+						Value:    "过往经历书写类",
 						Children: nil,
 					},
 				},
@@ -1018,7 +1052,7 @@ var ActionTags = []Node{
 								Children: nil,
 							},
 							{
-								Value:    "提供思路、心理作业/行为类/绘画类/其他",
+								Value:    "其他绘画类",
 								Children: nil,
 							},
 						},
@@ -1051,7 +1085,7 @@ var ActionTags = []Node{
 								Children: nil,
 							},
 							{
-								Value:    "提供思路、心理作业/行为类/情绪宣泄/其他",
+								Value:    "其他情绪宣泄",
 								Children: nil,
 							},
 						},
@@ -1142,7 +1176,7 @@ var ActionTags = []Node{
 				},
 			},
 			{
-				Value:    "提供思路、心理作业/其他",
+				Value:    "其他供思路、心理作业",
 				Children: nil,
 			},
 		},
@@ -1164,7 +1198,7 @@ var ActionTags = []Node{
 		Children: nil,
 	},
 	{
-		Value:    "其他",
+		Value:    "其他动作",
 		Children: nil,
 	},
 }
