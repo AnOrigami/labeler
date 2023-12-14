@@ -1176,7 +1176,7 @@ var ActionTags = []Node{
 				},
 			},
 			{
-				Value:    "其他供思路、心理作业",
+				Value:    "其他提供思路、心理作业",
 				Children: nil,
 			},
 		},
