@@ -49,6 +49,9 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 
 	for i, oneTask5 := range req.Tasks5 {
 		for j, oneDialog := range oneTask5.Dialog {
+			if len(oneDialog.Actions) != len(oneDialog.ModelOutputs) {
+				return UploadTask5Resp{}, errors.New(oneTask5.Name + "数据错误")
+			}
 			for n, action := range oneDialog.Actions {
 				if action.ActionName == "提供思路、心理作业" {
 					oneTask5.Dialog[j].Actions[n].ActionListNode = action.SolutionMethod
