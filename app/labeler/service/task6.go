@@ -44,12 +44,21 @@ func (svc *LabelerService) UploadTask6(ctx context.Context, req UploadTask6Req) 
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return UploadTask6Resp{}, err
 	}
+	var folder6 model.Folder
+	if err := svc.CollectionFolder6.FindOne(ctx, bson.M{"_id": project6.FolderID}).Decode(&folder6); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return UploadTask6Resp{}, errors.New("文件夹不存在")
+		}
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return UploadTask6Resp{}, err
+	}
 	insertTasks := make([]any, len(req.Tasks6))
 
 	for i, oneTask6 := range req.Tasks6 {
 		insertTasks[i] = model.Task6{
 			ID:          primitive.NewObjectID(),
 			Name:        req.Name[i],
+			FullName:    folder6.Name + "/" + project6.Name + "/" + req.Name[i],
 			ProjectID:   req.ProjectID,
 			Status:      model.TaskStatusAllocate,
 			Permissions: model.Permissions{},

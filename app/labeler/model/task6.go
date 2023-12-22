@@ -10,6 +10,7 @@ import (
 type Task6 struct {
 	ID          primitive.ObjectID `bson:"_id" json:"id"`
 	Name        string             `bson:"name" json:"name"`
+	FullName    string             `bson:"fullName" json:"fullName"`
 	ProjectID   primitive.ObjectID `bson:"projectId" json:"projectId"`
 	Status      string             `bson:"status" json:"status"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`

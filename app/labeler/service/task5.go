@@ -45,6 +45,14 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return UploadTask5Resp{}, err
 	}
+	var folder5 model.Folder
+	if err := svc.CollectionFolder5.FindOne(ctx, bson.M{"_id": project5.FolderID}).Decode(&folder5); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return UploadTask5Resp{}, errors.New("文件夹不存在")
+		}
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return UploadTask5Resp{}, err
+	}
 	insertTasks := make([]any, len(req.Tasks5))
 
 	for i, oneTask5 := range req.Tasks5 {
@@ -105,6 +113,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 		insertTasks[i] = model.Task5{
 			ID:          primitive.NewObjectID(),
 			Name:        req.Name[i],
+			FullName:    folder5.Name + "/" + project5.Name + "/" + req.Name[i],
 			ProjectID:   req.ProjectID,
 			Status:      model.TaskStatusAllocate,
 			Permissions: model.Permissions{},
@@ -130,6 +139,7 @@ type SearchTask5Resp struct {
 	Labeler    string              `json:"labeler"`
 	Checker    string              `json:"checker"`
 	UpdateTime util.Datetime       `json:"updateTime"`
+	Remark     bool                `json:"remark"`
 	Dialog     []model.ContentText `json:"dialog"`
 }
 
@@ -187,16 +197,29 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 		if task.Permissions.Labeler != nil {
 			labeler = userMap[task.Permissions.Labeler.ID]
 		}
-		res[i] = SearchTask5Resp{
-			ID:         task.ID,
-			ProjectID:  task.ProjectID,
-			Name:       task.Name,
-			Status:     task.Status,
-			Labeler:    labeler,
-			UpdateTime: task.UpdateTime,
-			Dialog:     task.Dialog,
+		if task.Remark != "" {
+			res[i] = SearchTask5Resp{
+				ID:         task.ID,
+				ProjectID:  task.ProjectID,
+				Name:       task.Name,
+				Status:     task.Status,
+				Labeler:    labeler,
+				UpdateTime: task.UpdateTime,
+				Dialog:     task.Dialog,
+				Remark:     true,
+			}
+		} else {
+			res[i] = SearchTask5Resp{
+				ID:         task.ID,
+				ProjectID:  task.ProjectID,
+				Name:       task.Name,
+				Status:     task.Status,
+				Labeler:    labeler,
+				UpdateTime: task.UpdateTime,
+				Dialog:     task.Dialog,
+				Remark:     false,
+			}
 		}
-
 	}
 	return res
 }
@@ -326,6 +349,7 @@ type UpdateTask5Req struct {
 	UserID        string              `json:"-"`
 	UserDataScope string              `json:"-"`
 	ID            primitive.ObjectID  `json:"id"`
+	Remaek        string              `json:"remark"`
 	Dialog        []model.ContentText `json:"dialog"`
 }
 
@@ -357,6 +381,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
 		"$set": bson.M{
+			"remark":     req.Remaek,
 			"dialog":     task.Dialog,
 			"updateTime": task.UpdateTime,
 		},

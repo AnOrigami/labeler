@@ -9,11 +9,13 @@ import (
 type Task5 struct {
 	ID          primitive.ObjectID `bson:"_id" json:"id"`
 	Name        string             `bson:"name" json:"name"`
+	FullName    string             `bson:"fullName" json:"fullName"`
 	ProjectID   primitive.ObjectID `bson:"projectId" json:"projectId"`
 	Status      string             `bson:"status" json:"status"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
 	Dialog      []ContentText      `bson:"dialog" json:"dialog"`
+	Remark      string             `bson:"remark" json:"remark"`
 }
 
 type ContentText struct {
@@ -32,6 +34,7 @@ type ContentText struct {
 	NewOutputs   []ModelOutput  `bson:"newOutputs" json:"new_outputs"`
 	Entities     []EntityOption `bson:"entities" json:"entities"`
 	Edit         bool           `bson:"edit" json:"edit"`
+	Skip         int            `bson:"skip" json:"skip"`
 }
 type EntityOption struct {
 	Class         string `bson:"class" json:"class"`
