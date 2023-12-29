@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
 	"github.com/go-admin-team/go-admin-core/sdk/pkg/response"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"go-admin/app/labeler/model"
 	"go-admin/app/labeler/service"
 	"go-admin/common/actions"
 	"go-admin/common/log"
@@ -47,7 +47,7 @@ func (api *LabelerAPI) UploadTask6() GinHandler {
 			return
 		}
 		files := mf.File["files"]
-		var tasks []bson.M
+		var tasks []model.Task6
 		var filenames []string
 		var projectID primitive.ObjectID
 		for _, fh := range files {
@@ -69,7 +69,7 @@ func (api *LabelerAPI) UploadTask6() GinHandler {
 					return
 				}
 			}(file)
-			var filedata bson.M
+			var filedata model.Task6
 			err = json.Unmarshal(d, &filedata)
 			if err != nil {
 				log.Logger().WithContext(c.Request.Context()).Error(err.Error())
