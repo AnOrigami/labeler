@@ -26,7 +26,7 @@ import (
 )
 
 type UploadTask6Req struct {
-	Tasks6    []bson.M
+	Tasks6    []model.Task6
 	ProjectID primitive.ObjectID
 	Name      []string
 }
@@ -63,7 +63,7 @@ func (svc *LabelerService) UploadTask6(ctx context.Context, req UploadTask6Req) 
 			Status:      model.TaskStatusAllocate,
 			Permissions: model.Permissions{},
 			UpdateTime:  util.Datetime(time.Now()),
-			Rpg:         oneTask6,
+			Rpg:         oneTask6.Rpg,
 		}
 	}
 	result, err := svc.CollectionTask6.InsertMany(ctx, insertTasks)
