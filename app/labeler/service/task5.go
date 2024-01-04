@@ -1071,7 +1071,7 @@ var ActionTags = []Node{
 				Children: nil,
 			},
 			{
-				Value:    "温和画质",
+				Value:    "温和面质",
 				Children: nil,
 			},
 			{
