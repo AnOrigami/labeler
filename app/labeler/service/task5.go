@@ -910,6 +910,14 @@ var ActionTags = []Node{
 						Value:    "以`关系问句`的方式进行提问",
 						Children: nil,
 					},
+					{
+						Value:    "以`假如问句`的方式进行提问",
+						Children: nil,
+					},
+					{
+						Value:    "以`差异问句`的方式进行提问",
+						Children: nil,
+					},
 				},
 			},
 			{
@@ -968,7 +976,7 @@ var ActionTags = []Node{
 						Children: nil,
 					},
 					{
-						Value:    "提问那我们可以一起探索一下。可以和我说说你最近的生活吗？",
+						Value:    "提问来访者最近的生活情况",
 						Children: nil,
 					},
 					{
@@ -983,6 +991,34 @@ var ActionTags = []Node{
 						Value:    "追问还有吗？",
 						Children: nil,
 					},
+					{
+						Value:    "提问来访者做某件事的理由",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者对某人物的看法/评价？",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者的自我评价",
+						Children: nil,
+					},
+					{
+						Value:    "提问来访者的行为/反应",
+						Children: nil,
+					},
+					{
+						Value:    "提问历史",
+						Children: nil,
+					},
+					{
+						Value:    "提问表现",
+						Children: nil,
+					},
+					{
+						Value:    "提问关系",
+						Children: nil,
+					},
 				},
 			},
 		},
@@ -991,11 +1027,15 @@ var ActionTags = []Node{
 		Value: "回应",
 		Children: []Node{
 			{
-				Value:    "总结或重复",
+				Value:    "总结",
 				Children: nil,
 			},
 			{
-				Value:    "反馈",
+				Value:    "共情/同理",
+				Children: nil,
+			},
+			{
+				Value:    "澄清",
 				Children: nil,
 			},
 			{
@@ -1012,6 +1052,38 @@ var ActionTags = []Node{
 			},
 			{
 				Value:    "安全岛技术",
+				Children: nil,
+			},
+			{
+				Value:    "使用关键词",
+				Children: nil,
+			},
+			{
+				Value:    "确认",
+				Children: nil,
+			},
+			{
+				Value:    "语意重复",
+				Children: nil,
+			},
+			{
+				Value:    "重构",
+				Children: nil,
+			},
+			{
+				Value:    "温和画质",
+				Children: nil,
+			},
+			{
+				Value:    "达成一致性理解",
+				Children: nil,
+			},
+			{
+				Value:    "比喻",
+				Children: nil,
+			},
+			{
+				Value:    "隐喻",
 				Children: nil,
 			},
 		},
