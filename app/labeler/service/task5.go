@@ -143,6 +143,7 @@ type SearchTask5Resp struct {
 	Checker    string              `json:"checker"`
 	UpdateTime util.Datetime       `json:"updateTime"`
 	Remark     bool                `json:"remark"`
+	WordCount  int                 `bson:"wordCount" json:"wordCount"`
 	Dialog     []model.ContentText `json:"dialog"`
 }
 
@@ -209,6 +210,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				Labeler:    labeler,
 				UpdateTime: task.UpdateTime,
 				Dialog:     task.Dialog,
+				WordCount:  task.WordCount,
 				Remark:     true,
 			}
 		} else {
@@ -220,6 +222,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				Labeler:    labeler,
 				UpdateTime: task.UpdateTime,
 				Dialog:     task.Dialog,
+				WordCount:  task.WordCount,
 				Remark:     false,
 			}
 		}
