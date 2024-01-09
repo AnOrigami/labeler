@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -109,7 +110,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 				uniqueEntitiesArray = append(uniqueEntitiesArray, v)
 			}
 			oneTask5.Dialog[j].Entities = uniqueEntitiesArray
-			wordCount = len(oneDialog.UserContent) + len(oneDialog.BotResponse) + wordCount
+			wordCount = utf8.RuneCountInString(oneDialog.UserContent) + utf8.RuneCountInString(oneDialog.BotResponse) + wordCount
 		}
 
 		insertTasks[i] = model.Task5{
