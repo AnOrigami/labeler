@@ -56,6 +56,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 	insertTasks := make([]any, len(req.Tasks5))
 
 	for i, oneTask5 := range req.Tasks5 {
+		var wordCount int
 		for j, oneDialog := range oneTask5.Dialog {
 			if len(oneDialog.Actions) != len(oneDialog.ModelOutputs) {
 				return UploadTask5Resp{}, errors.New(oneTask5.Name + "数据错误")
@@ -108,6 +109,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 				uniqueEntitiesArray = append(uniqueEntitiesArray, v)
 			}
 			oneTask5.Dialog[j].Entities = uniqueEntitiesArray
+			wordCount = len(oneDialog.UserContent) + len(oneDialog.BotResponse) + wordCount
 		}
 
 		insertTasks[i] = model.Task5{
@@ -119,6 +121,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 			Permissions: model.Permissions{},
 			UpdateTime:  util.Datetime(time.Now()),
 			Dialog:      oneTask5.Dialog,
+			WordCount:   wordCount,
 		}
 	}
 	result, err := svc.CollectionTask5.InsertMany(ctx, insertTasks)

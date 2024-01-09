@@ -16,6 +16,7 @@ type Task5 struct {
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
 	Dialog      []ContentText      `bson:"dialog" json:"dialog"`
 	Remark      string             `bson:"remark" json:"remark"`
+	WordCount   int                `bson:"wordCount" json:"wordCount"`
 }
 
 type ContentText struct {
