@@ -7,16 +7,17 @@ import (
 )
 
 type Task5 struct {
-	ID          primitive.ObjectID `bson:"_id" json:"id"`
-	Name        string             `bson:"name" json:"name"`
-	FullName    string             `bson:"fullName" json:"fullName"`
-	ProjectID   primitive.ObjectID `bson:"projectId" json:"projectId"`
-	Status      string             `bson:"status" json:"status"`
-	Permissions Permissions        `bson:"permissions" json:"permissions"`
-	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
-	Dialog      []ContentText      `bson:"dialog" json:"dialog"`
-	Remark      string             `bson:"remark" json:"remark"`
-	WordCount   int                `bson:"wordCount" json:"wordCount"`
+	ID           primitive.ObjectID `bson:"_id" json:"id"`
+	Name         string             `bson:"name" json:"name"`
+	FullName     string             `bson:"fullName" json:"fullName"`
+	ProjectID    primitive.ObjectID `bson:"projectId" json:"projectId"`
+	Status       string             `bson:"status" json:"status"`
+	Permissions  Permissions        `bson:"permissions" json:"permissions"`
+	UpdateTime   util.Datetime      `bson:"updateTime" json:"updateTime"`
+	Dialog       []ContentText      `bson:"dialog" json:"dialog"`
+	Remark       string             `bson:"remark" json:"remark"`
+	WordCount    int                `bson:"wordCount" json:"wordCount"`
+	EditQuantity int                `bson:"editQuantity" json:"editQuantity"`
 }
 
 type ContentText struct {
@@ -58,6 +59,7 @@ type Object struct {
 }
 
 type ModelOutput struct {
-	Action  string `bson:"action" json:"action"`
-	Content string `bson:"content" json:"content"`
+	Action     string `bson:"action" json:"action"`
+	Content    string `bson:"content" json:"content"`
+	NewContent string `bson:"newContent" json:"newContent"`
 }

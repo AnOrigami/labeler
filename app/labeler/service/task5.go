@@ -136,16 +136,17 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 type SearchTask5Req = SearchTaskReq
 
 type SearchTask5Resp struct {
-	ID         primitive.ObjectID  `json:"id"`
-	ProjectID  primitive.ObjectID  `json:"projectId"`
-	Name       string              `json:"name"`
-	Status     string              `json:"status"`
-	Labeler    string              `json:"labeler"`
-	Checker    string              `json:"checker"`
-	UpdateTime util.Datetime       `json:"updateTime"`
-	Remark     bool                `json:"remark"`
-	WordCount  int                 `bson:"wordCount" json:"wordCount"`
-	Dialog     []model.ContentText `json:"dialog"`
+	ID           primitive.ObjectID  `json:"id"`
+	ProjectID    primitive.ObjectID  `json:"projectId"`
+	Name         string              `json:"name"`
+	Status       string              `json:"status"`
+	Labeler      string              `json:"labeler"`
+	Checker      string              `json:"checker"`
+	UpdateTime   util.Datetime       `json:"updateTime"`
+	Remark       bool                `json:"remark"`
+	WordCount    int                 `bson:"wordCount" json:"wordCount"`
+	EditQuantity int                 `bson:"editQuantity" json:"editQuantity"`
+	Dialog       []model.ContentText `json:"dialog"`
 }
 
 func (svc *LabelerService) SearchTask5(ctx context.Context, req SearchTask5Req) ([]SearchTask5Resp, int, error) {
@@ -204,27 +205,29 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 		}
 		if task.Remark != "" {
 			res[i] = SearchTask5Resp{
-				ID:         task.ID,
-				ProjectID:  task.ProjectID,
-				Name:       task.Name,
-				Status:     task.Status,
-				Labeler:    labeler,
-				UpdateTime: task.UpdateTime,
-				Dialog:     task.Dialog,
-				WordCount:  task.WordCount,
-				Remark:     true,
+				ID:           task.ID,
+				ProjectID:    task.ProjectID,
+				Name:         task.Name,
+				Status:       task.Status,
+				Labeler:      labeler,
+				UpdateTime:   task.UpdateTime,
+				Dialog:       task.Dialog,
+				WordCount:    task.WordCount,
+				EditQuantity: task.EditQuantity,
+				Remark:       true,
 			}
 		} else {
 			res[i] = SearchTask5Resp{
-				ID:         task.ID,
-				ProjectID:  task.ProjectID,
-				Name:       task.Name,
-				Status:     task.Status,
-				Labeler:    labeler,
-				UpdateTime: task.UpdateTime,
-				Dialog:     task.Dialog,
-				WordCount:  task.WordCount,
-				Remark:     false,
+				ID:           task.ID,
+				ProjectID:    task.ProjectID,
+				Name:         task.Name,
+				Status:       task.Status,
+				Labeler:      labeler,
+				UpdateTime:   task.UpdateTime,
+				Dialog:       task.Dialog,
+				WordCount:    task.WordCount,
+				EditQuantity: task.EditQuantity,
+				Remark:       false,
 			}
 		}
 	}
@@ -372,6 +375,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 	if req.UserDataScope != "1" && req.UserDataScope != "2" && !task.Permissions.IsLabeler(req.UserID) && !task.Permissions.IsChecker(req.UserID) {
 		return model.Task5{}, errors.New("权限不足")
 	}
+	var editQuantity int
 	for i, oneDialog := range req.Dialog {
 		for j, action := range oneDialog.NewAction {
 			if in(action.ActionListNode, specialNodesList) {
@@ -383,14 +387,19 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			}
 			req.Dialog[i].NewOutputs[j].Action = req.Dialog[i].NewAction[j].ActionName
 		}
+		for k, output := range oneDialog.NewOutputs {
+			editQuantity = editDistance(output.Content, output.NewContent) + editQuantity
+			req.Dialog[i].NewOutputs[k].Content = output.NewContent
+		}
 	}
 	task.Dialog = req.Dialog
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
 		"$set": bson.M{
-			"remark":     req.Remaek,
-			"dialog":     task.Dialog,
-			"updateTime": task.UpdateTime,
+			"editQuantity": editQuantity,
+			"remark":       req.Remaek,
+			"dialog":       task.Dialog,
+			"updateTime":   task.UpdateTime,
 		},
 	}
 	if _, err := svc.CollectionTask5.UpdateByID(ctx, req.ID, update); err != nil {
@@ -1308,4 +1317,43 @@ var ActionTags = []Node{
 		Value:    "其他动作",
 		Children: nil,
 	},
+}
+
+func min(a, b, c int) int {
+	if a <= b && a <= c {
+		return a
+	}
+	if b <= a && b <= c {
+		return b
+	}
+	return c
+}
+
+func editDistance(s1, s2 string) int {
+	r1 := []rune(s1)
+	r2 := []rune(s2)
+
+	m := len(r1)
+	n := len(r2)
+
+	dp := make([][]int, m+1)
+	for i := range dp {
+		dp[i] = make([]int, n+1)
+	}
+
+	for j := 0; j <= n; j++ {
+		dp[0][j] = j
+	}
+
+	for i := 1; i <= m; i++ {
+		for j := 1; j <= n; j++ {
+			if r1[i-1] == r2[j-1] {
+				dp[i][j] = dp[i-1][j-1]
+			} else {
+				dp[i][j] = min(dp[i-1][j], dp[i][j-1]+1, dp[i-1][j-1]+1)
+			}
+		}
+	}
+
+	return dp[m][n]
 }
