@@ -387,8 +387,22 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			}
 			req.Dialog[i].NewOutputs[j].Action = req.Dialog[i].NewAction[j].ActionName
 		}
-		for k, output := range oneDialog.NewOutputs {
-			editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
+
+		if len(oneDialog.ModelOutputs) < len(oneDialog.NewOutputs) {
+			for k, output := range oneDialog.ModelOutputs {
+				editQuantity = editDistance(output.Content, oneDialog.NewOutputs[k].Content) + editQuantity
+			}
+			for k := len(oneDialog.ModelOutputs); k < len(oneDialog.NewOutputs); k++ {
+				editQuantity = editDistance("", oneDialog.NewOutputs[k].Content) + editQuantity
+			}
+		} else if len(oneDialog.ModelOutputs) == len(oneDialog.NewOutputs) {
+			for k, output := range oneDialog.NewOutputs {
+				editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
+			}
+		} else {
+			for k, output := range oneDialog.NewOutputs {
+				editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
+			}
 		}
 	}
 	task.Dialog = req.Dialog
