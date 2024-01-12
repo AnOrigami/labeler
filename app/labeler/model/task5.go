@@ -59,7 +59,6 @@ type Object struct {
 }
 
 type ModelOutput struct {
-	Action     string `bson:"action" json:"action"`
-	Content    string `bson:"content" json:"content"`
-	NewContent string `bson:"newContent" json:"newContent"`
+	Action  string `bson:"action" json:"action"`
+	Content string `bson:"content" json:"content"`
 }

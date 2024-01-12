@@ -359,7 +359,7 @@ type UpdateTask5Req struct {
 	UserID        string              `json:"-"`
 	UserDataScope string              `json:"-"`
 	ID            primitive.ObjectID  `json:"id"`
-	Remaek        string              `json:"remark"`
+	Remark        string              `json:"remark"`
 	Dialog        []model.ContentText `json:"dialog"`
 }
 
@@ -388,8 +388,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			req.Dialog[i].NewOutputs[j].Action = req.Dialog[i].NewAction[j].ActionName
 		}
 		for k, output := range oneDialog.NewOutputs {
-			editQuantity = editDistance(output.Content, output.NewContent) + editQuantity
-			req.Dialog[i].NewOutputs[k].Content = output.NewContent
+			editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
 		}
 	}
 	task.Dialog = req.Dialog
@@ -397,7 +396,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 	update := bson.M{
 		"$set": bson.M{
 			"editQuantity": editQuantity,
-			"remark":       req.Remaek,
+			"remark":       req.Remark,
 			"dialog":       task.Dialog,
 			"updateTime":   task.UpdateTime,
 		},
