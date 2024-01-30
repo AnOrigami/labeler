@@ -439,7 +439,7 @@ type UpdateTask5Req struct {
 
 func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) (model.Task5, error) {
 	var task model.Task5
-	if err := svc.CollectionTask5.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&task); err != nil {
+	if err := svc.CollectionLabeledTask5.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&task); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return model.Task5{}, errors.New("任务不存在")
 		}
@@ -589,7 +589,7 @@ func (svc *LabelerService) BatchSetTask5Status(ctx context.Context, req BatchSet
 		}
 	}
 
-	result, err := svc.CollectionTask5.UpdateMany(ctx, filter, update)
+	result, err := svc.CollectionLabeledTask5.UpdateMany(ctx, filter, update)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return BatchSetTask5StatusResp{}, err
@@ -1451,6 +1451,71 @@ func editDistance(s1, s2 string) int {
 
 	return dp[m][n]
 }
+
+type Req struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+}
+
+//func (svc *LabelerService) SearchTask5Count(ctx context.Context, req Req) ([]model.Task5, error) {
+//	filter := bson.M{
+//		"projectId": req.ProjectID,
+//	}
+//
+//	cursor, err := svc.CollectionTask5.Find(ctx, filter)
+//	if err != nil {
+//		log.Logger().WithContext(ctx).Error(err.Error())
+//		return nil, err
+//	}
+//
+//	var tasks []model.Task5
+//	if err := cursor.All(ctx, &tasks); err != nil {
+//		log.Logger().WithContext(ctx).Error(err.Error())
+//		return nil, err
+//	}
+//
+//	for i, task := range tasks {
+//		var editQuantity int
+//		var wordCount int
+//		for _, oneDialog := range task.Dialog {
+//			if len(oneDialog.ModelOutputs) < len(oneDialog.NewOutputs) {
+//				for k, output := range oneDialog.ModelOutputs {
+//					editQuantity = editDistance(output.Content, oneDialog.NewOutputs[k].Content) + editQuantity
+//				}
+//				for k := len(oneDialog.ModelOutputs); k < len(oneDialog.NewOutputs); k++ {
+//					editQuantity = editDistance("", oneDialog.NewOutputs[k].Content) + editQuantity
+//				}
+//			} else if len(oneDialog.ModelOutputs) == len(oneDialog.NewOutputs) {
+//				for k, output := range oneDialog.NewOutputs {
+//					editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
+//				}
+//			} else {
+//				for k, output := range oneDialog.NewOutputs {
+//					editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
+//				}
+//			}
+//			wordCount = utf8.RuneCountInString(oneDialog.UserContent) + utf8.RuneCountInString(oneDialog.BotResponse) + wordCount
+//		}
+//		tasks[i].EditQuantity = editQuantity
+//		tasks[i].WordCount = wordCount
+//		update := bson.M{
+//			"$set": bson.M{
+//				"editQuantity": editQuantity,
+//				"wordCount":    wordCount,
+//			},
+//		}
+//		if _, err := svc.CollectionTask5.UpdateByID(ctx, task.ID, update); err != nil {
+//			log.Logger().WithContext(ctx).Error("update task: ", err.Error())
+//			return nil, err
+//		}
+//	}
+//
+//	if err != nil {
+//		log.Logger().WithContext(ctx).Error(err.Error())
+//		return nil, err
+//	}
+//	return tasks, nil
+//}
+
 func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []string) []string {
 	names := make([]string, 0)
 	for i, oneTask5 := range task5s {
