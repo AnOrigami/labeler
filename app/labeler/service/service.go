@@ -17,28 +17,29 @@ var (
 )
 
 type LabelerService struct {
-	MongodbClient      *mongo.Client
-	MongodbDB          *mongo.Database
-	CollectionProject  *mongo.Collection
-	CollectionFolder   *mongo.Collection
-	CollectionSchema   *mongo.Collection
-	CollectionTask     *mongo.Collection
-	CollectionProject2 *mongo.Collection
-	CollectionTask2    *mongo.Collection
-	CollectionFolder2  *mongo.Collection
-	CollectionTask3    *mongo.Collection
-	CollectionProject3 *mongo.Collection
-	CollectionFolder3  *mongo.Collection
-	CollectionTask4    *mongo.Collection
-	CollectionProject4 *mongo.Collection
-	CollectionFolder4  *mongo.Collection
-	CollectionTask5    *mongo.Collection
-	CollectionProject5 *mongo.Collection
-	CollectionFolder5  *mongo.Collection
-	CollectionTask6    *mongo.Collection
-	CollectionProject6 *mongo.Collection
-	CollectionFolder6  *mongo.Collection
-	GormDB             *gorm.DB
+	MongodbClient          *mongo.Client
+	MongodbDB              *mongo.Database
+	CollectionProject      *mongo.Collection
+	CollectionFolder       *mongo.Collection
+	CollectionSchema       *mongo.Collection
+	CollectionTask         *mongo.Collection
+	CollectionProject2     *mongo.Collection
+	CollectionTask2        *mongo.Collection
+	CollectionFolder2      *mongo.Collection
+	CollectionTask3        *mongo.Collection
+	CollectionProject3     *mongo.Collection
+	CollectionFolder3      *mongo.Collection
+	CollectionTask4        *mongo.Collection
+	CollectionProject4     *mongo.Collection
+	CollectionFolder4      *mongo.Collection
+	CollectionTask5        *mongo.Collection
+	CollectionLabeledTask5 *mongo.Collection
+	CollectionProject5     *mongo.Collection
+	CollectionFolder5      *mongo.Collection
+	CollectionTask6        *mongo.Collection
+	CollectionProject6     *mongo.Collection
+	CollectionFolder6      *mongo.Collection
+	GormDB                 *gorm.DB
 }
 
 func NewLabelerService(mongodbClient *mongo.Client, gormDB *gorm.DB) *LabelerService {
@@ -62,6 +63,7 @@ func NewLabelerService(mongodbClient *mongo.Client, gormDB *gorm.DB) *LabelerSer
 	svc.CollectionProject4 = svc.MongodbDB.Collection("project4")
 	svc.CollectionFolder4 = svc.MongodbDB.Collection("folder4")
 	svc.CollectionTask5 = svc.MongodbDB.Collection("task5")
+	svc.CollectionLabeledTask5 = svc.MongodbDB.Collection("labeledtask5")
 	svc.CollectionProject5 = svc.MongodbDB.Collection("project5")
 	svc.CollectionFolder5 = svc.MongodbDB.Collection("folder5")
 	svc.CollectionTask6 = svc.MongodbDB.Collection("task6")

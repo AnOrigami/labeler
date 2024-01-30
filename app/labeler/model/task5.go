@@ -37,6 +37,8 @@ type ContentText struct {
 	Entities     []EntityOption `bson:"entities" json:"entities"`
 	Edit         bool           `bson:"edit" json:"edit"`
 	Skip         int            `bson:"skip" json:"skip"`
+	Version      int            `bson:"version" json:"version"`
+	Priority     int            `bson:"priority" json:"priority"`
 }
 type EntityOption struct {
 	Class         string `bson:"class" json:"class"`

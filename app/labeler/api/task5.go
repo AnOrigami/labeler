@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	jwt "github.com/go-admin-team/go-admin-core/sdk/pkg/jwtauth"
@@ -26,7 +27,7 @@ func task5AuthRouter() RouterCheckRole {
 	return func(g *gin.RouterGroup, api *LabelerAPI, authMiddleware *jwt.GinJWTMiddleware) {
 		g.POST("/api/v1/labeler/t5/upload", api.UploadTask5())
 		g.POST("/api/v1/labeler/t5/search", api.SearchTask5())
-		g.POST("/api/v1/labeler/t5/alloc/labeler", api.Task5BatchAllocLabeler())
+		g.POST("/api/v1/labeler/t5/alloc", api.AllocOneTask5())
 		g.POST("/api/v1/labeler/t5/reset", api.ResetTasks5())
 		g.PUT("/api/v1/labeler/t5/", api.UpdateTask5())
 		g.POST("/api/v1/labeler/t5/batch/status", api.BatchSetTask5Status())
@@ -96,6 +97,10 @@ func (api *LabelerAPI) UploadTask5() GinHandler {
 		if err != nil {
 
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			if strings.Contains(err.Error(), "重复") {
+				response.Error(c, 409, err, "")
+				return
+			}
 			response.Error(c, 500, err, "")
 			return
 		}
@@ -127,9 +132,9 @@ func (api *LabelerAPI) SearchTask5() GinHandler {
 	}
 }
 
-func (api *LabelerAPI) Task5BatchAllocLabeler() GinHandler {
+func (api *LabelerAPI) AllocOneTask5() GinHandler {
 	return func(c *gin.Context) {
-		var req service.Task5BatchAllocLabelerReq
+		var req service.AllocOneTaskReq
 		if err := c.ShouldBindJSON(&req); err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 400, err, "参数异常")
@@ -140,10 +145,20 @@ func (api *LabelerAPI) Task5BatchAllocLabeler() GinHandler {
 			return
 		}
 
-		resp, err := api.LabelerService.Task5BatchAllocLabeler(c.Request.Context(), req)
+		//p := &actions.DataPermission{
+		//	UserId: 4,
+		//}
+		p := actions.GetPermissionFromContext(c)
+		req.Person = strconv.Itoa(p.UserId)
+
+		resp, err := api.LabelerService.AllocOneTask5(c.Request.Context(), req)
 		if err != nil {
-			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
-			response.Error(c, 500, err, "")
+			if err.Error() == "存在未标注任务" {
+				response.OK(c, resp, "分配成功: 分配待标注任务")
+			} else {
+				log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+				response.Error(c, 500, err, "")
+			}
 			return
 		}
 		response.OK(c, resp, "分配成功")
@@ -203,6 +218,7 @@ func (api *LabelerAPI) UpdateTask5() GinHandler {
 
 		p := actions.GetPermissionFromContext(c)
 		req.UserID = strconv.Itoa(p.UserId)
+		//req.UserID = "2"
 		req.UserDataScope = p.DataScope
 		resp, err := api.LabelerService.UpdateTask5(c, req)
 		if err != nil {
