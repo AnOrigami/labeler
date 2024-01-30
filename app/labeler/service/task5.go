@@ -54,11 +54,43 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return UploadTask5Resp{}, err
 	}
+	//判断是否重复上传
+	var sessionIDs []string
+	var names []string
+	var oldTask5s []model.Task5
+	filter := bson.M{
+		"projectId": req.ProjectID,
+	}
+	cursor, err := svc.CollectionTask5.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return UploadTask5Resp{}, err
+	}
+	if err := cursor.All(ctx, &oldTask5s); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return UploadTask5Resp{}, err
+	}
+	//得到老表中sessionID列表
+	for _, oneOldTask5 := range oldTask5s {
+		sessionIDs = append(sessionIDs, oneOldTask5.Dialog[0].SessionID)
+	}
+	//req.Task5中并没有文件名，得把req.Name也带过去
+	names = repeatingTask5s(sessionIDs, req.Tasks5, req.Name)
+	if len(names) > 0 {
+		nameString := "上传失败，重复文件："
+		for _, name := range names {
+			nameString = nameString + name + " "
+		}
+		//存在任何重复文件直接返回，任何文件都不会上传
+		return UploadTask5Resp{}, errors.New(nameString)
+	}
+
 	insertTasks := make([]any, len(req.Tasks5))
 
 	for i, oneTask5 := range req.Tasks5 {
 		var wordCount int
 		for j, oneDialog := range oneTask5.Dialog {
+			oneTask5.Dialog[j].Priority = oneDialog.Version * 10
 			if len(oneDialog.Actions) != len(oneDialog.ModelOutputs) {
 				return UploadTask5Resp{}, errors.New(oneTask5.Name + "数据错误")
 			}
@@ -156,7 +188,7 @@ func (svc *LabelerService) SearchTask5(ctx context.Context, req SearchTask5Req) 
 		return nil, 0, err
 	}
 
-	cursor, err := svc.CollectionTask5.Find(ctx, filter, buildOptions(req))
+	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter, buildOptions(req))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -169,7 +201,7 @@ func (svc *LabelerService) SearchTask5(ctx context.Context, req SearchTask5Req) 
 	}
 	results := svc.tasksToSearchTask5Resp(ctx, tasks)
 
-	count, err := svc.CollectionTask5.CountDocuments(ctx, filter)
+	count, err := svc.CollectionLabeledTask5.CountDocuments(ctx, filter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -234,70 +266,112 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 	return res
 }
 
-type Task5BatchAllocLabelerReq struct {
+type AllocOneTaskReq struct {
 	ProjectID primitive.ObjectID `json:"projectId"`
-	Number    int64              `json:"number"`
-	Persons   []string           `json:"persons"`
+	Person    string             `json:"-"`
 }
 
-type Task5BatchAllocLabelerResp struct {
-	Count int64 `json:"count"`
-}
+func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskReq) (model.Task5, error) {
 
-func (svc *LabelerService) Task5BatchAllocLabeler(ctx context.Context, req Task5BatchAllocLabelerReq) (Task5BatchAllocLabelerResp, error) {
-	filter := bson.M{
-		"projectId": req.ProjectID,
-		"status":    model.TaskStatusAllocate,
-		"permissions.labeler": bson.M{
-			"$exists": false,
-		},
+	//查询是否有待标注任务，如果有直接返回这个待标注的，不进行新的任务分配
+	fileLabeling := bson.M{
+		"projectId":           req.ProjectID,
+		"status":              model.TaskStatusLabeling,
+		"permissions.labeler": model.Person{ID: req.Person},
 	}
-	count, err := svc.CollectionTask5.CountDocuments(ctx, filter)
+	var oneLabelingTask5 model.Task5
+	err := svc.CollectionLabeledTask5.FindOne(ctx, fileLabeling).Decode(&oneLabelingTask5)
+	if err == nil {
+		// 存在待标注任务，只能有一个待标注任务，所以返回这个存在的待标注任务
+		return oneLabelingTask5, errors.New("存在未标注任务")
+	}
+	if err != mongo.ErrNoDocuments {
+		// 查询操作出错
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	}
+
+	//不存在待标注任务，err==mongo.ErrNoDocuments
+	//当前项目下不存在待标注的，进行新的任务分配
+	filterLabeledTask5 := bson.M{
+		"permissions.labeler": model.Person{ID: fmt.Sprint(req.Person)},
+	}
+	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filterLabeledTask5)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
-		return Task5BatchAllocLabelerResp{}, err
+		return model.Task5{}, err
+	}
+	var tasks []model.Task5
+	//在LabeledTask5中查询出当前用户所有标注过的数据，从而得到session的集合
+	if err := cursor.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	}
+	personSessionID := make([]string, 0)
+	for _, oneTask5 := range tasks {
+		personSessionID = append(personSessionID, oneTask5.Dialog[0].SessionID)
 	}
 
-	if count > req.Number {
-		count = req.Number
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"dialog.0.sessionId": bson.M{
+			"$nin": personSessionID,
+		},
+		"dialog.0.priority": bson.M{
+			"$gt": 0,
+		},
 	}
-	maxCount := count / int64(len(req.Persons))
-	if maxCount < 1 {
-		maxCount = 1
-	}
-	for _, id := range req.Persons {
-		opts := options.Find().SetProjection(bson.D{{"_id", 1}}).SetLimit(maxCount)
-		result, err := svc.CollectionTask5.Find(ctx, filter, opts)
-		if err != nil {
-			log.Logger().WithContext(ctx).Error(err.Error())
-			return Task5BatchAllocLabelerResp{}, err
-		}
+	//priority优先级字段最大的排在最前面
+	sortTask := bson.D{{"dialog.0.priority", -1}}
 
-		var tasks []model.Task5
-		if err = result.All(ctx, &tasks); err != nil {
-			log.Logger().WithContext(ctx).Error(err.Error())
-			return Task5BatchAllocLabelerResp{}, err
-		}
+	var resp model.Task5
+	optionsTask := options.FindOne().SetSort(sortTask)
 
-		ft := bson.M{
-			"_id": bson.M{
-				"$in": util.Map(tasks, func(v model.Task5) primitive.ObjectID { return v.ID }),
-			},
-		}
-		update := bson.M{
-			"$set": bson.M{
-				"permissions.labeler": model.Person{ID: fmt.Sprint(id)},
-				"status":              model.TaskStatusLabeling,
-				"updateTime":          util.Datetime(time.Now()),
-			},
-		}
-		if _, err := svc.CollectionTask5.UpdateMany(ctx, ft, update); err != nil {
-			log.Logger().WithContext(ctx).Error(err.Error())
-			return Task5BatchAllocLabelerResp{}, err
-		}
+	err = svc.CollectionTask5.FindOne(ctx, filter, optionsTask).Decode(&resp)
+	if err != mongo.ErrNoDocuments && err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	} else if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, errors.New("当前用户没有可分配的任务")
 	}
 
-	return Task5BatchAllocLabelerResp{Count: count}, nil
+	// 更新优先级
+	var newDialog []model.ContentText
+	for _, dialog := range resp.Dialog {
+		dialog.Priority = dialog.Priority - 1
+		newDialog = append(newDialog, dialog)
+	}
+	updateFilter := bson.M{"_id": resp.ID}
+	update := bson.M{"$set": bson.M{"dialog": newDialog}}
+
+	_, err = svc.CollectionTask5.UpdateOne(ctx, updateFilter, update)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	}
+
+	//将分配人员信息插入allocTask5
+	labeler := &model.Person{
+		ID: req.Person,
+	}
+	resp.Permissions = model.Permissions{
+		Labeler: labeler,
+		Checker: nil,
+	}
+
+	//为分配出来的task5创建新的ID，以便insert进新表
+	resp.ID = primitive.NewObjectID()
+	resp.Status = model.TaskStatusLabeling
+
+	_, err = svc.CollectionLabeledTask5.InsertOne(ctx, resp)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	}
+
+	//返回的task5是优先级字段没有减去1的
+	return resp, nil
 }
 
 type ResetTasks5Req struct {
@@ -415,7 +489,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			"updateTime":   task.UpdateTime,
 		},
 	}
-	if _, err := svc.CollectionTask5.UpdateByID(ctx, req.ID, update); err != nil {
+	if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, req.ID, update); err != nil {
 		log.Logger().WithContext(ctx).Error("update task: ", err.Error())
 		return model.Task5{}, err
 	}
@@ -556,7 +630,7 @@ func (svc *LabelerService) SearchMyTask5(ctx context.Context, req SearchMyTask5R
 			{"permissions.checker.id": req.UserID},
 		}
 	}
-	cursor, err := svc.CollectionTask5.Find(ctx, filter, buildOptions5(req))
+	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter, buildOptions5(req))
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -569,7 +643,7 @@ func (svc *LabelerService) SearchMyTask5(ctx context.Context, req SearchMyTask5R
 	}
 	results := svc.tasksToSearchTask5Resp(ctx, tasks)
 
-	count, err := svc.CollectionTask5.CountDocuments(ctx, filter)
+	count, err := svc.CollectionLabeledTask5.CountDocuments(ctx, filter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return nil, 0, err
@@ -634,7 +708,7 @@ func (svc *LabelerService) DownloadTask5(ctx context.Context, req DownloadTask5R
 		}
 	}
 
-	cursor, err := svc.CollectionTask5.Find(ctx, filter)
+	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return DownloadTask5Resp{}, err
@@ -701,7 +775,7 @@ func (svc *LabelerService) GetTask5(ctx context.Context, req GetTask5Req, p *act
 	filter := bson.M{}
 	ids := make([]string, 0)
 	userID := strconv.Itoa(p.UserId)
-	if err := svc.CollectionTask5.FindOne(ctx, bson.D{{"_id", req.ID}}).Decode(&task); err != nil {
+	if err := svc.CollectionLabeledTask5.FindOne(ctx, bson.D{{"_id", req.ID}}).Decode(&task); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return GetTask5Resp{}, ErrNoDoc
 		}
@@ -762,7 +836,7 @@ func (svc *LabelerService) GetTask5(ctx context.Context, req GetTask5Req, p *act
 	var nextTask model.Task5
 	var lastTask model.Task5
 	filter["_id"] = bson.M{"$gt": task.ID}
-	if err := svc.CollectionTask5.FindOne(ctx, filter).Decode(&nextTask); err != nil {
+	if err := svc.CollectionLabeledTask5.FindOne(ctx, filter).Decode(&nextTask); err != nil {
 		if err != mongo.ErrNoDocuments {
 			log.Logger().WithContext(ctx).Error("get task: ", err.Error())
 			return GetTask5Resp{}, err
@@ -771,7 +845,7 @@ func (svc *LabelerService) GetTask5(ctx context.Context, req GetTask5Req, p *act
 
 	filter["_id"] = bson.M{"$lt": task.ID}
 	option := options.FindOne().SetSort(bson.M{"_id": -1})
-	if err := svc.CollectionTask5.FindOne(ctx, filter, option).Decode(&lastTask); err != nil {
+	if err := svc.CollectionLabeledTask5.FindOne(ctx, filter, option).Decode(&lastTask); err != nil {
 		if err != mongo.ErrNoDocuments {
 			log.Logger().WithContext(ctx).Error("get task: ", err.Error())
 			return GetTask5Resp{}, err
@@ -1339,7 +1413,7 @@ var ActionTags = []Node{
 	},
 }
 
-func min(a, b, c int) int {
+func minThree(a, b, c int) int {
 	if a <= b && a <= c {
 		return a
 	}
@@ -1370,10 +1444,22 @@ func editDistance(s1, s2 string) int {
 			if r1[i-1] == r2[j-1] {
 				dp[i][j] = dp[i-1][j-1]
 			} else {
-				dp[i][j] = min(dp[i-1][j], dp[i][j-1]+1, dp[i-1][j-1]+1)
+				dp[i][j] = minThree(dp[i-1][j], dp[i][j-1]+1, dp[i-1][j-1]+1)
 			}
 		}
 	}
 
 	return dp[m][n]
+}
+func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []string) []string {
+	names := make([]string, 0)
+	for i, oneTask5 := range task5s {
+		for _, s := range sessionIDs {
+			if s == oneTask5.Dialog[0].SessionID {
+				names = append(names, filename[i])
+				break
+			}
+		}
+	}
+	return names
 }
