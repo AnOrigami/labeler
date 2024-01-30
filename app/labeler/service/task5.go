@@ -493,7 +493,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 		log.Logger().WithContext(ctx).Error("update task: ", err.Error())
 		return model.Task5{}, err
 	}
-	if err := svc.CollectionTask5.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&task); err != nil {
+	if err := svc.CollectionLabeledTask5.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&task); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return model.Task5{}, errors.New("任务不存在")
 		}
