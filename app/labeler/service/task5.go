@@ -434,6 +434,7 @@ type UpdateTask5Req struct {
 	UserDataScope string              `json:"-"`
 	ID            primitive.ObjectID  `json:"id"`
 	Remark        string              `json:"remark"`
+	RemarkOptions int                 `bson:"remarkOptions" json:"remarkOptions"`
 	Dialog        []model.ContentText `json:"dialog"`
 }
 
