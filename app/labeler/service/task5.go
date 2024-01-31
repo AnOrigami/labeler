@@ -484,10 +484,11 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
 		"$set": bson.M{
-			"editQuantity": editQuantity,
-			"remark":       req.Remark,
-			"dialog":       task.Dialog,
-			"updateTime":   task.UpdateTime,
+			"editQuantity":  editQuantity,
+			"remark":        req.Remark,
+			"remarkOptions": req.RemarkOptions,
+			"dialog":        task.Dialog,
+			"updateTime":    task.UpdateTime,
 		},
 	}
 	if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, req.ID, update); err != nil {
