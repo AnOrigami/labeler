@@ -90,7 +90,7 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 	for i, oneTask5 := range req.Tasks5 {
 		var wordCount int
 		for j, oneDialog := range oneTask5.Dialog {
-			oneTask5.Dialog[j].Priority = oneDialog.Version * 10
+			oneTask5.Dialog[j].Priority = oneDialog.Version * 5
 			if len(oneDialog.Actions) != len(oneDialog.ModelOutputs) {
 				return UploadTask5Resp{}, errors.New(oneTask5.Name + "数据错误")
 			}
@@ -662,7 +662,7 @@ func buildOptions5(req SearchMyTask5Req) *options.FindOptions {
 }
 
 func (svc *LabelerService) DeleteTask5(ctx context.Context, id primitive.ObjectID) error {
-	if _, err := svc.CollectionTask5.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
+	if _, err := svc.CollectionLabeledTask5.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
 		log.Logger().WithContext(ctx).Error("delete task: ", err.Error())
 		return err
 	}
