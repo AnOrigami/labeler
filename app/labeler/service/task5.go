@@ -662,6 +662,37 @@ func buildOptions5(req SearchMyTask5Req) *options.FindOptions {
 }
 
 func (svc *LabelerService) DeleteTask5(ctx context.Context, id primitive.ObjectID) error {
+
+	var delTask5 model.Task5
+	err := svc.CollectionLabeledTask5.FindOne(ctx, bson.M{"_id": id}).Decode(&delTask5)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error("find delete task: ", err.Error())
+		return err
+	}
+	if delTask5.Status == model.TaskStatusLabeling {
+		var oldTask5 model.Task5
+		err := svc.CollectionTask5.FindOne(ctx, bson.M{
+			"projectId":          delTask5.ProjectID,
+			"dialog.0.sessionId": delTask5.Dialog[0].SessionID}).Decode(&oldTask5)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error("find delete task in old table: ", err.Error())
+			return err
+		}
+		for i := range oldTask5.Dialog {
+			oldTask5.Dialog[i].Priority += 1
+		}
+
+		updateFilter := bson.M{
+			"_id": oldTask5.ID,
+		}
+		update := bson.M{"$set": bson.M{"dialog": oldTask5.Dialog}}
+
+		_, err = svc.CollectionTask5.UpdateOne(ctx, updateFilter, update)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error("update task priority: ", err.Error())
+			return err
+		}
+	}
 	if _, err := svc.CollectionLabeledTask5.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
 		log.Logger().WithContext(ctx).Error("delete task: ", err.Error())
 		return err
