@@ -37,6 +37,9 @@ func task5AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t5/detail", api.GetTask5())
 		g.POST("/api/v1/labeler/t5/mycount", api.SearchMyTask5Count())
 		g.POST("/api/v1/labeler/t5/action", api.GetActionTags())
+
+		//根据projectId迁移(insert)task5进旧表和新表
+		//g.POST("/api/v1/labeler/t5/changedata", api.ChangeDate())
 	}
 }
 
@@ -146,10 +149,10 @@ func (api *LabelerAPI) AllocOneTask5() GinHandler {
 		}
 
 		//p := &actions.DataPermission{
-		//	UserId: 4,
+		//	UserId: 20,
 		//}
 		p := actions.GetPermissionFromContext(c)
-		req.Person = strconv.Itoa(p.UserId)
+		req.UserId = strconv.Itoa(p.UserId)
 
 		resp, err := api.LabelerService.AllocOneTask5(c.Request.Context(), req)
 		if err != nil {
@@ -382,3 +385,28 @@ func (api *LabelerAPI) GetActionTags() GinHandler {
 		response.OK(c, service.ActionTags, "查询成功")
 	}
 }
+
+// 一次性的改变旧数据，此接口进行insert(和del)完成操作，不涉及update
+//func (api *LabelerAPI) ChangeDate() GinHandler {
+//	return func(c *gin.Context) {
+//		//传递的projectid(ChangeProjectId)是那个项目下需要进行迁移的所有task5
+//		var req service.ReqObj
+//		err := c.ShouldBindJSON(&req)
+//		if err != nil {
+//			response.Error(c, 400, err, "old prokjectID 参数异常")
+//			return
+//		}
+//		//NewProjectId这个是进入到哪个新的项目下
+//		req.NewProjectId, err = primitive.ObjectIDFromHex("65c0a04c6095bd22925dfd24")
+//		if err != nil {
+//			response.Error(c, 400, err, "new projectID 参数异常")
+//			return
+//		}
+//		if respCount, err := api.LabelerService.ChangeOldData(c, req); err != nil {
+//			response.Error(c, 500, err, err.Error())
+//			return
+//		} else {
+//			response.OK(c, respCount, "change成功")
+//		}
+//	}
+//}

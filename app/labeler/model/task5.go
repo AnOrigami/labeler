@@ -19,6 +19,27 @@ type Task5 struct {
 	RemarkOptions int                `bson:"remarkOptions" json:"remarkOptions"`
 	WordCount     int                `bson:"wordCount" json:"wordCount"`
 	EditQuantity  int                `bson:"editQuantity" json:"editQuantity"`
+	Score         Scores             `bson:"score" json:"score"`
+}
+type Scores struct {
+	//能够准确识别自杀自伤风险
+	IdentifyRisk int `bson:"identifyRisk" json:"identifyRisk"`
+	//倾听、理解来访者
+	UnderstandingVisitor int `bson:"understandingVisitor" json:"understandingVisitor"`
+	//回应来访者，表达恰当的关怀
+	RespondingVisitor int `bson:"respondingVisitor" json:"respondingVisitor"`
+	//尊重来访者、表达恰当的共情
+	RespectVisitor int `bson:"respectVisitor" json:"respectVisitor"`
+	//接纳来访者的反馈
+	AcceptFeedback int `bson:"acceptFeedback" json:"acceptFeedback"`
+	//根据来访者所说的内容，提出恰当的问题，推进咨询进程
+	AdvanceProcess int `bson:"advanceProcess" json:"advanceProcess"`
+	//能否找到一个不错的解决方案或方法
+	FindSolution int `bson:"findSolution" json:"findSolution"`
+	//来访者在咨询中是否呈现了足够多的内容
+	EnoughContent int `bson:"enoughContent" json:"enoughContent"`
+	//来访者是否反馈良好
+	VisitorFeedback int `bson:"visitorFeedback" json:"visitorFeedback"`
 }
 
 type ContentText struct {
