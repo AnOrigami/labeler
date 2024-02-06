@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -268,16 +268,16 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 
 type AllocOneTaskReq struct {
 	ProjectID primitive.ObjectID `json:"projectId"`
-	Person    string             `json:"-"`
+	UserId    string             `json:"-"`
 }
 
 func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskReq) (model.Task5, error) {
 
 	//查询是否有待标注任务，如果有直接返回这个待标注的，不进行新的任务分配
 	fileLabeling := bson.M{
-		"projectId":           req.ProjectID,
-		"status":              model.TaskStatusLabeling,
-		"permissions.labeler": model.Person{ID: req.Person},
+		"projectId":              req.ProjectID,
+		"status":                 model.TaskStatusLabeling,
+		"permissions.labeler.id": req.UserId,
 	}
 	var oneLabelingTask5 model.Task5
 	err := svc.CollectionLabeledTask5.FindOne(ctx, fileLabeling).Decode(&oneLabelingTask5)
@@ -292,11 +292,32 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 	}
 
 	//不存在待标注任务，err==mongo.ErrNoDocuments
+	//查询所有存活
+	var project5List []model.Project5
+	cursor, err := svc.CollectionProject5.Find(ctx, bson.M{})
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	}
+	if err := cursor.All(ctx, &project5List); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task5{}, err
+	}
+	var project5Ids []primitive.ObjectID
+	for _, project5 := range project5List {
+		project5Ids = append(project5Ids, project5.ID)
+	}
+
 	//当前项目下不存在待标注的，进行新的任务分配
 	filterLabeledTask5 := bson.M{
-		"permissions.labeler": model.Person{ID: fmt.Sprint(req.Person)},
+		"permissions.labeler.id": req.UserId,
+		//删除project时没有删除project下的task，所以过滤只在存在的project下的task
+		"projectId": bson.M{
+			"$in": project5Ids,
+		},
+		//"projectId":              req.ProjectID,
 	}
-	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filterLabeledTask5)
+	cursor, err = svc.CollectionLabeledTask5.Find(ctx, filterLabeledTask5)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return model.Task5{}, err
@@ -353,7 +374,7 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 
 	//将分配人员信息插入allocTask5
 	labeler := &model.Person{
-		ID: req.Person,
+		ID: req.UserId,
 	}
 	resp.Permissions = model.Permissions{
 		Labeler: labeler,
@@ -436,10 +457,26 @@ type UpdateTask5Req struct {
 	Remark        string              `json:"remark"`
 	RemarkOptions int                 `bson:"remarkOptions" json:"remarkOptions"`
 	Dialog        []model.ContentText `json:"dialog"`
+	Score         model.Scores        `json:"score"`
 }
 
 func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) (model.Task5, error) {
 	var task model.Task5
+
+	//req.Score大于10或小于1不合法
+	socreType := reflect.TypeOf(req.Score)
+	scoreValue := reflect.ValueOf(req.Score)
+
+	for i := 0; i < socreType.NumField(); i++ {
+		scoreValue := scoreValue.Field(i).Int()
+
+		if scoreValue > 10 || scoreValue < 1 {
+			err := errors.New("评分不合法")
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return model.Task5{}, err
+		}
+	}
+
 	if err := svc.CollectionLabeledTask5.FindOne(ctx, bson.M{"_id": req.ID}).Decode(&task); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return model.Task5{}, errors.New("任务不存在")
@@ -481,6 +518,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			"editQuantity":  editQuantity,
 			"remark":        req.Remark,
 			"remarkOptions": req.RemarkOptions,
+			"score":         req.Score,
 			"dialog":        task.Dialog,
 			"updateTime":    task.UpdateTime,
 		},
@@ -1555,3 +1593,130 @@ func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []strin
 	}
 	return names
 }
+
+//type ReqObj struct {
+//	ChangeProjectId primitive.ObjectID `json:"project_id"`
+//	NewProjectId    primitive.ObjectID
+//}
+//
+//func (svc *LabelerService) ChangeOldData(ctx context.Context, req ReqObj) (int, error) {
+//
+//	filter := bson.M{
+//		"projectId": req.ChangeProjectId,
+//	}
+//
+//	var oldData []model.Task5
+//	cursor, err := svc.CollectionTask5.Find(ctx, filter)
+//
+//	if err != nil {
+//		return -1, errors.New("1543")
+//	}
+//	err = cursor.All(ctx, &oldData)
+//	if err != nil {
+//		return -1, errors.New("1574")
+//	}
+//
+//	var project5 model.Project5
+//	if err := svc.CollectionProject5.FindOne(ctx, bson.M{"_id": req.NewProjectId}).Decode(&project5); err != nil {
+//		if errors.Is(err, mongo.ErrNoDocuments) {
+//			return -1, errors.New("项目不存在")
+//		}
+//		return -1, err
+//	}
+//	var folder5 model.Folder
+//	if err := svc.CollectionFolder5.FindOne(ctx, bson.M{"_id": project5.FolderID}).Decode(&folder5); err != nil {
+//		if errors.Is(err, mongo.ErrNoDocuments) {
+//			return -1, errors.New("文件夹不存在")
+//		}
+//		return -1, err
+//	}
+//
+//	//未分配和待标注只进旧表，已提交进新表 和 旧表
+//	allocateTask5 := make([]any, 0)    //原来未分配的进旧表
+//	submitTask5 := make([]any, 0)      //原来已提交的进旧表
+//	submitTask5ToNew := make([]any, 0) //已提交的进新表
+//	LabelingTask5 := make([]any, 0)    //待标注进旧表
+//	for index, data := range oldData {
+//
+//		//三种状态都需要重置taskID、FullName、projectID
+//		data.ID = primitive.NewObjectID()
+//		data.FullName = folder5.Name + "/" + project5.Name + "/" + oldData[index].Name
+//		data.ProjectID = req.NewProjectId
+//
+//		//未分配，对version、priority进行赋值就行
+//		if data.Status == model.TaskStatusAllocate {
+//
+//			for i2, _ := range data.Dialog {
+//				data.Dialog[i2].Version = 1
+//				data.Dialog[i2].Priority = 5
+//
+//			}
+//			allocateTask5 = append(allocateTask5, data)
+//		}
+//
+//		//已提交，对version、priority进行赋值
+//		if data.Status == model.TaskStatusSubmit {
+//			for i2, _ := range data.Dialog {
+//				data.Dialog[i2].Version = 1
+//				data.Dialog[i2].Priority = 4
+//			}
+//			submitTask5ToNew = append(submitTask5ToNew, data)
+//			//已提交进旧表的还需改变status和置空permissions
+//			data.Permissions = model.Permissions{}
+//			data.Status = model.TaskStatusAllocate
+//			submitTask5 = append(submitTask5, data)
+//		}
+//
+//		//待标注，对version、priority进行赋值
+//		if data.Status == model.TaskStatusLabeling {
+//			for i2, _ := range data.Dialog {
+//				data.Dialog[i2].Version = 1
+//				data.Dialog[i2].Priority = 5
+//			}
+//			////待标注进旧表的还需改变status和置空permissions
+//			data.Permissions = model.Permissions{}
+//			data.Status = model.TaskStatusAllocate
+//			LabelingTask5 = append(LabelingTask5, data)
+//		}
+//	}
+//
+//	//对就的问价夹中的task5进行删除，通过projectID进行匹配的
+//	//_, err = svc.CollectionTask5.DeleteMany(ctx, filter)
+//	//if err != nil {
+//	//	return -1,  errors.New("1617 删除old project task")
+//	//}
+//
+//	//未分配进旧表新文件夹
+//	if len(allocateTask5) > 0 {
+//		_, err = svc.CollectionTask5.InsertMany(ctx, allocateTask5)
+//		if err != nil {
+//			return -1, errors.New("1623 未分配进旧表新文件夹")
+//		}
+//	}
+//
+//	//已提交进旧表新文件夹
+//	if len(submitTask5) > 0 {
+//		_, err = svc.CollectionTask5.InsertMany(ctx, submitTask5)
+//		if err != nil {
+//			return -1, errors.New("1629 已提交进旧表新文件夹")
+//		}
+//	}
+//
+//	//已提交进新表新文件夹
+//	if len(submitTask5) > 0 {
+//		_, err = svc.CollectionLabeledTask5.InsertMany(ctx, submitTask5ToNew)
+//		if err != nil {
+//			return -1, errors.New("1635 已提交进新表新文件夹")
+//		}
+//	}
+//
+//	//待标注进旧表新文件夹
+//	if len(LabelingTask5) > 0 {
+//		_, err = svc.CollectionTask5.InsertMany(ctx, LabelingTask5)
+//		if err != nil {
+//			return -1, err
+//		}
+//	}
+//
+//	return 1, nil
+//}
