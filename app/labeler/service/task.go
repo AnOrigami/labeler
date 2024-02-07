@@ -85,9 +85,9 @@ type SearchTaskReq struct {
 	UpdateTimeStart string             `json:"updateTimeStart"`
 	UpdateTimeEnd   string             `json:"updateTimeEnd"`
 	PType           string             `json:"pType"`
-
-	UserID    int
-	DataScope string
+	Version         []int              `json:"version"`
+	UserID          int
+	DataScope       string
 	dto.Pagination
 }
 
@@ -145,6 +145,11 @@ func buildOptions(req SearchTaskReq) *options.FindOptions {
 
 func buildFilter(req SearchTaskReq) (bson.M, error) {
 	filter := bson.M{}
+	if len(req.Version) > 0 {
+		filter["version"] = bson.M{
+			"$in": req.Version,
+		}
+	}
 	if !req.ID.IsZero() {
 		filter["_id"] = req.ID
 	}

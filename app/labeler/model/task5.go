@@ -22,22 +22,22 @@ type Task5 struct {
 	Score         Scores             `bson:"score" json:"score"`
 }
 type Scores struct {
-	//能够准确识别自杀自伤风险
+	//能准确识别风险并提出转介建议
 	IdentifyRisk int `bson:"identifyRisk" json:"identifyRisk"`
-	//倾听、理解来访者
+	//尊重、好奇地倾听和理解来访者
 	UnderstandingVisitor int `bson:"understandingVisitor" json:"understandingVisitor"`
-	//回应来访者，表达恰当的关怀
-	RespondingVisitor int `bson:"respondingVisitor" json:"respondingVisitor"`
-	//尊重来访者、表达恰当的共情
-	RespectVisitor int `bson:"respectVisitor" json:"respectVisitor"`
-	//接纳来访者的反馈
-	AcceptFeedback int `bson:"acceptFeedback" json:"acceptFeedback"`
-	//根据来访者所说的内容，提出恰当的问题，推进咨询进程
-	AdvanceProcess int `bson:"advanceProcess" json:"advanceProcess"`
-	//能否找到一个不错的解决方案或方法
-	FindSolution int `bson:"findSolution" json:"findSolution"`
-	//来访者在咨询中是否呈现了足够多的内容
-	EnoughContent int `bson:"enoughContent" json:"enoughContent"`
+	//向来访者表达适当的共情和关怀
+	ExpressingCare int `bson:"respondingVisitor" json:"respondingVisitor"`
+	//接纳并恰当回应来访者的负面反馈
+	AcceptFeedback int `bson:"respectVisitor" json:"respectVisitor"`
+	//在来访者所说的内容中选择并进行了恰当回应或提问以推进咨询进程
+	AdvanceProcess int `bson:"acceptFeedback" json:"acceptFeedback"`
+	//促进来访者在咨询中更多表达、呈现更多内容
+	PromoteProcess int `bson:"advanceProcess" json:"advanceProcess"`
+	//启发或协助来访者有了解决方案或思路，或一小步的行动
+	InspirationAssistance int `bson:"findSolution" json:"findSolution"`
+	//缓解了来访者的负面情绪/提升了其积极情绪
+	RelieveEmotions int `bson:"enoughContent" json:"enoughContent"`
 	//来访者是否反馈良好
 	VisitorFeedback int `bson:"visitorFeedback" json:"visitorFeedback"`
 }

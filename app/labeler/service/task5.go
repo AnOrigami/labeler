@@ -463,14 +463,14 @@ type UpdateTask5Req struct {
 func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) (model.Task5, error) {
 	var task model.Task5
 
-	//req.Score大于10或小于1不合法
+	//req.Score大于5或小于0不合法
 	socreType := reflect.TypeOf(req.Score)
 	scoreValue := reflect.ValueOf(req.Score)
 
 	for i := 0; i < socreType.NumField(); i++ {
 		scoreValue := scoreValue.Field(i).Int()
 
-		if scoreValue > 10 || scoreValue < 1 {
+		if scoreValue > 5 || scoreValue < 0 {
 			err := errors.New("评分不合法")
 			log.Logger().WithContext(ctx).Error(err.Error())
 			return model.Task5{}, err
