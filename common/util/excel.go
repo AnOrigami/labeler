@@ -1,9 +1,15 @@
 package util
 
 import (
+	"context"
+	"embed"
 	"encoding/base64"
-	"github.com/xuri/excelize/v2"
+	"fmt"
 	"time"
+
+	"github.com/xuri/excelize/v2"
+
+	"go-admin/common/log"
 )
 
 func CreateExcelFile(data [][]interface{}, columns []string, model string) (*string, string, error) {
@@ -56,6 +62,52 @@ func MakeExcelFromData(data [][]interface{}, columns []string) *excelize.File {
 
 func GetExcelFileName(model string) string {
 	return model + time.Now().UTC().Add(8*time.Hour).Format("20060102") + ".xlsx"
+}
+
+//go:embed task5score.xlsx
+var task5excel embed.FS
+
+func EmbedExcelData(excelName string, data [][]interface{}, ctx context.Context) (*string, string, error) {
+	var result string
+	excelName = excelName + ".xlsx"
+	r, err := task5excel.Open("task5score.xlsx")
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return &result, excelName, err
+	}
+
+	f, err := excelize.OpenReader(r)
+	defer func() {
+		// Close the spreadsheet.
+		if err := f.Close(); err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return
+		}
+	}()
+	if err != nil {
+		panic(err)
+	}
+	//if err := f.SetSheetRow(f.GetSheetName(0), "A3", &[]any{"a", "b", "c"}); err != nil {
+	//	panic(err)
+	//}
+	for row, rowValues := range data {
+		aixs, _ := excelize.CoordinatesToCellName(1, row+3)
+		err := f.SetSheetRow("Sheet1", aixs, &rowValues)
+		if err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return &result, excelName, err
+		}
+	}
+
+	if err := f.SaveAs("测试.xlsx"); err != nil {
+		fmt.Println(err)
+	}
+
+	//f.SaveAs(excelName)
+	buf, _ := f.WriteToBuffer()
+	result = base64.StdEncoding.EncodeToString(buf.Bytes())
+	return &result, excelName, nil
+
 }
 
 var ColMap = map[int]string{

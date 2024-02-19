@@ -20,6 +20,7 @@ type Task5 struct {
 	WordCount     int                `bson:"wordCount" json:"wordCount"`
 	EditQuantity  int                `bson:"editQuantity" json:"editQuantity"`
 	Score         Scores             `bson:"score" json:"score"`
+	HasScore      bool               `bson:"hasScore" json:"hasScore"`
 }
 type Scores struct {
 	//能准确识别风险并提出转介建议

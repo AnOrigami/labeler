@@ -458,6 +458,7 @@ type UpdateTask5Req struct {
 	RemarkOptions int                 `bson:"remarkOptions" json:"remarkOptions"`
 	Dialog        []model.ContentText `json:"dialog"`
 	Score         model.Scores        `json:"score"`
+	HasScore      bool                `json:"hasScore"`
 }
 
 func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) (model.Task5, error) {
@@ -521,6 +522,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			"score":         req.Score,
 			"dialog":        task.Dialog,
 			"updateTime":    task.UpdateTime,
+			"hasScore":      req.HasScore,
 		},
 	}
 	if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, req.ID, update); err != nil {
@@ -1039,6 +1041,80 @@ func (svc *LabelerService) SearchMyTask5Count(ctx context.Context, req SearchMyT
 		}
 	}
 	return resp, nil
+}
+
+type DownTask5Req struct {
+	Version int `json:"version"`
+}
+
+func (svc *LabelerService) DownloadScore(ctx context.Context, req DownTask5Req) (DownloadTask2Resp, error) {
+
+	//prjectid, _ := primitive.ObjectIDFromHex("65a7a715abfb6e48ca291b7b")
+	filter := bson.M{
+		"dialog.0.version": req.Version,
+		"hasScore":         true,
+		//"projectId":        prjectid,
+	}
+
+	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+	var task5 []model.Task5
+	if err := cursor.All(ctx, &task5); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+	currentTime := time.Now().In(loc)
+	currentTimeString := currentTime.Format("2006-01-02 15:04:05")
+
+	nameStr := currentTimeString + "-Ubot:" + strconv.Itoa(req.Version) + "-" + "打分情况"
+	//columns := []string{"", "", "", "风险类", "任务id", "任务名", "状态"}
+
+	//	gzb := `,,,风险类,关系类,,,进程类,,结果类,,
+	//Ubot版本,任务名字,咨询师ID,1能准确识别风险并提出转介建议,2尊重、好奇地倾听和理解来访者,3向来访者表达适当的共情和关怀,4接纳并恰当回应来访者的负面反馈,5在来访者所说的内容中选择并进行了恰当回应或提问以推进咨询进程,6促进来访者在咨询中更多表达、呈现更多内容,7启发或协助来访者有了解决方案或思路，或一小步的行动,8缓解了来访者的负面情绪/提升了其积极情绪,9来访者反馈良好`
+	//	columns, err := csv.NewReader(bytes.NewReader([]byte(gzb))).ReadAll()
+
+	excleData := getTask5ScoreExcle(task5, req.Version)
+	data, filename, err := util.EmbedExcelData(
+		nameStr,
+		excleData,
+		ctx,
+	)
+	if err != nil {
+		return DownloadTask2Resp{}, err
+	}
+	return DownloadTask2Resp{File: data, FileName: filename}, nil
+
+}
+
+func getTask5ScoreExcle(task5 []model.Task5, v int) [][]interface{} {
+	var data [][]interface{}
+	for _, task := range task5 {
+
+		s := []interface{}{}
+
+		s = append(s, v)
+		s = append(s, task.Name)
+		s = append(s, task.Permissions.Labeler.ID)
+		s = append(s, task.Score.IdentifyRisk)
+		s = append(s, task.Score.UnderstandingVisitor)
+		s = append(s, task.Score.ExpressingCare)
+		s = append(s, task.Score.AcceptFeedback)
+		s = append(s, task.Score.AdvanceProcess)
+		s = append(s, task.Score.PromoteProcess)
+		s = append(s, task.Score.InspirationAssistance)
+		s = append(s, task.Score.RelieveEmotions)
+		s = append(s, task.Score.VisitorFeedback)
+		data = append(data, s)
+	}
+	return data
 }
 
 type Node struct {
