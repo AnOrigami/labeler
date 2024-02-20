@@ -3,6 +3,12 @@ package labeler
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"reflect"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-admin-team/go-admin-core/config/source/file"
 	"github.com/go-admin-team/go-admin-core/sdk"
@@ -11,15 +17,6 @@ import (
 	"github.com/go-admin-team/go-admin-core/sdk/pkg"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
-	"go-admin/app/labeler/api"
-	service2 "go-admin/app/labeler/service"
-	"go-admin/app/scrm"
-	"go-admin/common/database"
-	"go-admin/common/log"
-	common "go-admin/common/middleware"
-	"go-admin/common/storage"
-	"go-admin/common/util"
-	ext "go-admin/config"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonoptions"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,11 +24,18 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
-	"os/signal"
-	"reflect"
-	"time"
+
+	"go-admin/app/admin/models"
+	"go-admin/app/labeler/api"
+	service2 "go-admin/app/labeler/service"
+	"go-admin/app/scrm"
+	"go-admin/common/database"
+	"go-admin/common/global"
+	"go-admin/common/log"
+	common "go-admin/common/middleware"
+	"go-admin/common/storage"
+	"go-admin/common/util"
+	ext "go-admin/config"
 )
 
 const ServiceName = "labeler"
@@ -65,6 +69,13 @@ func run() error {
 			database.Setup,
 			storage.Setup,
 		)
+		return nil
+	})
+
+	_ = log.WithTracer(startingCtx, PackageName, "setup 注册监听函数", func(ctx context.Context) error {
+		queue := sdk.Runtime.GetMemoryQueue("")
+		queue.Register(global.LoginLog, models.SaveLoginLog)
+		go queue.Run()
 		return nil
 	})
 

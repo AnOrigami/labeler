@@ -20,7 +20,7 @@ settings:
     # 日志等级, trace, debug, info, warn, error, fatal
     level: trace
     # 数据库日志开关
-    enableddb: false
+    enableddb: true
   jwt:
     # token 密钥，生产环境时及的修改
     secret: fasjklfeio
@@ -36,5 +36,5 @@ settings:
       poolSize: 100
   extend: # 扩展项使用说明
     mongodb:
-      dsn: mongodb://192.168.31.71:27017
+      dsn: mongodb://192.168.31.72:27017
       labelerdb: labeler
