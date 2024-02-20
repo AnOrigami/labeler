@@ -38,6 +38,7 @@ func task5AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t5/mycount", api.SearchMyTask5Count())
 		g.POST("/api/v1/labeler/t5/action", api.GetActionTags())
 		g.POST("/api/v1/labeler/t5/downloadscore", api.DownloadScore())
+		g.POST("/api/v1/labeler/t5/downloadworkload", api.DownloadWorkload())
 
 		//根据projectId迁移(insert)task5进旧表和新表
 		//g.POST("/api/v1/labeler/t5/changedata", api.ChangeDate())
@@ -389,13 +390,31 @@ func (api *LabelerAPI) GetActionTags() GinHandler {
 
 func (api *LabelerAPI) DownloadScore() GinHandler {
 	return func(c *gin.Context) {
-		var req service.DownTask5Req
+		var req service.DownloadScoreReq
 		if err := c.ShouldBindJSON(&req); err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "参数异常")
 			return
 		}
 		resp, err := api.LabelerService.DownloadScore(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "查询成功")
+	}
+}
+
+func (api *LabelerAPI) DownloadWorkload() GinHandler {
+	return func(c *gin.Context) {
+		var req service.DownloadWorkloadReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		resp, err := api.LabelerService.DownloadWorkload(c.Request.Context(), req)
 		if err != nil {
 			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
 			response.Error(c, 500, err, "")

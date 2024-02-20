@@ -19,6 +19,7 @@ type Task5 struct {
 	RemarkOptions int                `bson:"remarkOptions" json:"remarkOptions"`
 	WordCount     int                `bson:"wordCount" json:"wordCount"`
 	EditQuantity  int                `bson:"editQuantity" json:"editQuantity"`
+	WorkQuantity  int                `bson:"workQuantity" json:"workQuantity"`
 	Score         Scores             `bson:"score" json:"score"`
 	HasScore      bool               `bson:"hasScore" json:"hasScore"`
 }
