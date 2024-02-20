@@ -36,5 +36,5 @@ settings:
       poolSize: 100
   extend: # 扩展项使用说明
     mongodb:
-      dsn: mongodb://192.168.31.72:27017
+      dsn: mongodb://192.168.31.71:27017
       labelerdb: labeler
