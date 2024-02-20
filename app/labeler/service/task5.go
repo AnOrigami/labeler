@@ -178,6 +178,7 @@ type SearchTask5Resp struct {
 	Remark       bool                `json:"remark"`
 	WordCount    int                 `bson:"wordCount" json:"wordCount"`
 	EditQuantity int                 `bson:"editQuantity" json:"editQuantity"`
+	WorkQuantity int                 `bson:"workQuantity" json:"workQuantity"`
 	Dialog       []model.ContentText `json:"dialog"`
 }
 
@@ -246,6 +247,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				Dialog:       task.Dialog,
 				WordCount:    task.WordCount,
 				EditQuantity: task.EditQuantity,
+				WorkQuantity: task.WorkQuantity,
 				Remark:       true,
 			}
 		} else {
@@ -259,6 +261,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				Dialog:       task.Dialog,
 				WordCount:    task.WordCount,
 				EditQuantity: task.EditQuantity,
+				WorkQuantity: task.WorkQuantity,
 				Remark:       false,
 			}
 		}
@@ -510,8 +513,8 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 		newResultStr := strings.Join(newContent, "")
 		resultStr := strings.Join(content, "")
 		editQuantity = editDistance(resultStr, newResultStr) + editQuantity
-
 	}
+	workQuantity := task.WordCount + (editQuantity+len(req.Remark))*2
 	task.Dialog = req.Dialog
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
@@ -523,6 +526,7 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 			"dialog":        task.Dialog,
 			"updateTime":    task.UpdateTime,
 			"hasScore":      req.HasScore,
+			"workQuantity":  workQuantity,
 		},
 	}
 	if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, req.ID, update); err != nil {
@@ -1043,11 +1047,11 @@ func (svc *LabelerService) SearchMyTask5Count(ctx context.Context, req SearchMyT
 	return resp, nil
 }
 
-type DownTask5Req struct {
-	Version int `json:"version"`
+type DownloadScoreReq struct {
+	Version []int `json:"version"`
 }
 
-func (svc *LabelerService) DownloadScore(ctx context.Context, req DownTask5Req) (DownloadTask2Resp, error) {
+func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreReq) (DownloadTask2Resp, error) {
 
 	//prjectid, _ := primitive.ObjectIDFromHex("65a7a715abfb6e48ca291b7b")
 	filter := bson.M{
@@ -1073,15 +1077,16 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownTask5Req) 
 	}
 	currentTime := time.Now().In(loc)
 	currentTimeString := currentTime.Format("2006-01-02 15:04:05")
+	ubotVsersion := ""
+	for i := 0; i < len(req.Version); i++ {
+		if i == len(req.Version)-1 {
+			ubotVsersion = ubotVsersion + strconv.Itoa(req.Version[i])
+		}
+		ubotVsersion = ubotVsersion + strconv.Itoa(req.Version[i]) + ","
+	}
+	nameStr := currentTimeString + "-Ubot:" + ubotVsersion + "-" + "打分情况"
 
-	nameStr := currentTimeString + "-Ubot:" + strconv.Itoa(req.Version) + "-" + "打分情况"
-	//columns := []string{"", "", "", "风险类", "任务id", "任务名", "状态"}
-
-	//	gzb := `,,,风险类,关系类,,,进程类,,结果类,,
-	//Ubot版本,任务名字,咨询师ID,1能准确识别风险并提出转介建议,2尊重、好奇地倾听和理解来访者,3向来访者表达适当的共情和关怀,4接纳并恰当回应来访者的负面反馈,5在来访者所说的内容中选择并进行了恰当回应或提问以推进咨询进程,6促进来访者在咨询中更多表达、呈现更多内容,7启发或协助来访者有了解决方案或思路，或一小步的行动,8缓解了来访者的负面情绪/提升了其积极情绪,9来访者反馈良好`
-	//	columns, err := csv.NewReader(bytes.NewReader([]byte(gzb))).ReadAll()
-
-	excleData := getTask5ScoreExcle(task5, req.Version)
+	excleData := getTask5ScoreExcle(task5)
 	data, filename, err := util.EmbedExcelData(
 		nameStr,
 		excleData,
@@ -1094,13 +1099,122 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownTask5Req) 
 
 }
 
-func getTask5ScoreExcle(task5 []model.Task5, v int) [][]interface{} {
+type DownloadWorkloadReq struct {
+	PersonList      []string `json:"personList"`
+	WordCount       bool     `json:"wordCount"`
+	EditQuantity    bool     `json:"editQuantity"`
+	RemarkQuantity  bool     `json:"remarkQuantity"`
+	WorkQuantity    bool     `json:"workQuantity"`
+	TaskStatus      string   `json:"taskStatus"`
+	UpdateTimeStart string   `json:"updateTimeStart"`
+	UpdateTimeEnd   string   `json:"updateTimeEnd"`
+}
+
+func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWorkloadReq) (DownloadTask2Resp, error) {
+
+	var users []models.SysUser
+	db := svc.GormDB.WithContext(ctx).Where("user_id IN (?)", req.PersonList).
+		Find(&users)
+	if err := db.Error; err != nil {
+		return DownloadTask2Resp{}, err
+	}
+
+	var userMap = make(map[int]string, len(users))
+	for _, user := range users {
+		userMap[user.UserId] = user.NickName
+	}
+
+	filter := bson.M{
+		//"status": req.TaskStatus,
+		"permissions.labeler.id": bson.M{
+			"$in": req.PersonList,
+		},
+	}
+
+	//if len(req.UpdateTimeStart) > 0 && len(req.UpdateTimeEnd) > 0 {
+	//	startTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
+	//	if err != nil {
+	//		return DownloadTask2Resp{}, ErrTimeParse
+	//	}
+	//	endTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
+	//	if err != nil {
+	//		return DownloadTask2Resp{}, ErrTimeParse
+	//	}
+	//	filter["updateTime"] = bson.M{
+	//		"$gte": startTime,
+	//		"$lte": endTime,
+	//	}
+	//}
+
+	var task5 []model.Task5
+
+	cur, err := svc.CollectionLabeledTask5.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+	err = cur.All(ctx, &task5)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return DownloadTask2Resp{}, err
+	}
+	nameStr := req.UpdateTimeStart + "-" + req.UpdateTimeEnd + " "
+	columns := []string{"咨询师", "阅读量", "修改量", "点评量", "工作量"}
+	excelData := getTask5WorkExcle(task5, userMap, req)
+
+	data, filename, err := util.CreateExcelFile(
+		excelData,
+		columns,
+		nameStr,
+	)
+	if err != nil {
+		return DownloadTask2Resp{}, err
+	}
+	return DownloadTask2Resp{File: data, FileName: filename}, nil
+}
+func getTask5WorkExcle(task5 []model.Task5, user map[int]string, req DownloadWorkloadReq) [][]interface{} {
+	var data [][]interface{}
+	for _, task := range task5 {
+
+		s := []interface{}{}
+		userId, _ := strconv.Atoi(task.Permissions.Labeler.ID)
+		s = append(s, user[userId])
+		if req.WordCount {
+			s = append(s, task.WordCount)
+		} else {
+			s = append(s, "")
+		}
+		if req.EditQuantity {
+			s = append(s, task.EditQuantity)
+		} else {
+			s = append(s, "")
+		}
+		if req.RemarkQuantity {
+			s = append(s, len(task.Remark))
+		} else {
+			s = append(s, "")
+		}
+		if req.WorkQuantity {
+			s = append(s, task.WorkQuantity)
+		} else {
+			s = append(s, "")
+		}
+		data = append(data, s)
+	}
+	return data
+}
+func getTask5ScoreExcle(task5 []model.Task5) [][]interface{} {
 	var data [][]interface{}
 	for _, task := range task5 {
 
 		s := []interface{}{}
 
-		s = append(s, v)
+		s = append(s, task.Dialog[0].Version)
 		s = append(s, task.Name)
 		s = append(s, task.Permissions.Labeler.ID)
 		s = append(s, task.Score.IdentifyRisk)
@@ -1112,6 +1226,12 @@ func getTask5ScoreExcle(task5 []model.Task5, v int) [][]interface{} {
 		s = append(s, task.Score.InspirationAssistance)
 		s = append(s, task.Score.RelieveEmotions)
 		s = append(s, task.Score.VisitorFeedback)
+		if task.RemarkOptions == 1 {
+			s = append(s, "及格")
+		}
+		if task.RemarkOptions == 2 {
+			s = append(s, "不及格")
+		}
 		data = append(data, s)
 	}
 	return data
