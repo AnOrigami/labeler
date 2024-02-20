@@ -25,12 +25,10 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"gorm.io/gorm"
 
-	"go-admin/app/admin/models"
 	"go-admin/app/labeler/api"
 	service2 "go-admin/app/labeler/service"
 	"go-admin/app/scrm"
 	"go-admin/common/database"
-	"go-admin/common/global"
 	"go-admin/common/log"
 	common "go-admin/common/middleware"
 	"go-admin/common/storage"
@@ -69,13 +67,6 @@ func run() error {
 			database.Setup,
 			storage.Setup,
 		)
-		return nil
-	})
-
-	_ = log.WithTracer(startingCtx, PackageName, "setup 注册监听函数", func(ctx context.Context) error {
-		queue := sdk.Runtime.GetMemoryQueue("")
-		queue.Register(global.LoginLog, models.SaveLoginLog)
-		go queue.Run()
 		return nil
 	})
 
