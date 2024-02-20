@@ -318,7 +318,6 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 		"projectId": bson.M{
 			"$in": project5Ids,
 		},
-		//"projectId":              req.ProjectID,
 	}
 	cursor, err = svc.CollectionLabeledTask5.Find(ctx, filterLabeledTask5)
 	if err != nil {
@@ -1053,11 +1052,17 @@ type DownloadScoreReq struct {
 
 func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreReq) (DownloadTask2Resp, error) {
 
-	//prjectid, _ := primitive.ObjectIDFromHex("65a7a715abfb6e48ca291b7b")
-	filter := bson.M{
-		"dialog.0.version": req.Version,
-		"hasScore":         true,
-		//"projectId":        prjectid,
+	filter := bson.M{}
+	if len(req.Version) == 0 {
+		filter = bson.M{
+
+			"hasScore": true,
+		}
+	} else {
+		filter = bson.M{
+			"dialog.0.version": req.Version,
+			"hasScore":         true,
+		}
 	}
 
 	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter)
@@ -1125,26 +1130,26 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 	}
 
 	filter := bson.M{
-		//"status": req.TaskStatus,
+		"status": req.TaskStatus,
 		"permissions.labeler.id": bson.M{
 			"$in": req.PersonList,
 		},
 	}
 
-	//if len(req.UpdateTimeStart) > 0 && len(req.UpdateTimeEnd) > 0 {
-	//	startTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
-	//	if err != nil {
-	//		return DownloadTask2Resp{}, ErrTimeParse
-	//	}
-	//	endTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
-	//	if err != nil {
-	//		return DownloadTask2Resp{}, ErrTimeParse
-	//	}
-	//	filter["updateTime"] = bson.M{
-	//		"$gte": startTime,
-	//		"$lte": endTime,
-	//	}
-	//}
+	if len(req.UpdateTimeStart) > 0 && len(req.UpdateTimeEnd) > 0 {
+		startTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeStart)
+		if err != nil {
+			return DownloadTask2Resp{}, ErrTimeParse
+		}
+		endTime, err := time.Parse(util.TimeLayoutDatetime, req.UpdateTimeEnd)
+		if err != nil {
+			return DownloadTask2Resp{}, ErrTimeParse
+		}
+		filter["updateTime"] = bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		}
+	}
 
 	var task5 []model.Task5
 
@@ -1717,66 +1722,6 @@ type Req struct {
 	ProjectID primitive.ObjectID `json:"projectId"`
 }
 
-//func (svc *LabelerService) SearchTask5Count(ctx context.Context, req Req) ([]model.Task5, error) {
-//	filter := bson.M{
-//		"projectId": req.ProjectID,
-//	}
-//
-//	cursor, err := svc.CollectionTask5.Find(ctx, filter)
-//	if err != nil {
-//		log.Logger().WithContext(ctx).Error(err.Error())
-//		return nil, err
-//	}
-//
-//	var tasks []model.Task5
-//	if err := cursor.All(ctx, &tasks); err != nil {
-//		log.Logger().WithContext(ctx).Error(err.Error())
-//		return nil, err
-//	}
-//
-//	for i, task := range tasks {
-//		var editQuantity int
-//		var wordCount int
-//		for _, oneDialog := range task.Dialog {
-//			if len(oneDialog.ModelOutputs) < len(oneDialog.NewOutputs) {
-//				for k, output := range oneDialog.ModelOutputs {
-//					editQuantity = editDistance(output.Content, oneDialog.NewOutputs[k].Content) + editQuantity
-//				}
-//				for k := len(oneDialog.ModelOutputs); k < len(oneDialog.NewOutputs); k++ {
-//					editQuantity = editDistance("", oneDialog.NewOutputs[k].Content) + editQuantity
-//				}
-//			} else if len(oneDialog.ModelOutputs) == len(oneDialog.NewOutputs) {
-//				for k, output := range oneDialog.NewOutputs {
-//					editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
-//				}
-//			} else {
-//				for k, output := range oneDialog.NewOutputs {
-//					editQuantity = editDistance(oneDialog.ModelOutputs[k].Content, output.Content) + editQuantity
-//				}
-//			}
-//			wordCount = utf8.RuneCountInString(oneDialog.UserContent) + utf8.RuneCountInString(oneDialog.BotResponse) + wordCount
-//		}
-//		tasks[i].EditQuantity = editQuantity
-//		tasks[i].WordCount = wordCount
-//		update := bson.M{
-//			"$set": bson.M{
-//				"editQuantity": editQuantity,
-//				"wordCount":    wordCount,
-//			},
-//		}
-//		if _, err := svc.CollectionTask5.UpdateByID(ctx, task.ID, update); err != nil {
-//			log.Logger().WithContext(ctx).Error("update task: ", err.Error())
-//			return nil, err
-//		}
-//	}
-//
-//	if err != nil {
-//		log.Logger().WithContext(ctx).Error(err.Error())
-//		return nil, err
-//	}
-//	return tasks, nil
-//}
-
 func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []string) []string {
 	names := make([]string, 0)
 	for i, oneTask5 := range task5s {
@@ -1789,130 +1734,3 @@ func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []strin
 	}
 	return names
 }
-
-//type ReqObj struct {
-//	ChangeProjectId primitive.ObjectID `json:"project_id"`
-//	NewProjectId    primitive.ObjectID
-//}
-//
-//func (svc *LabelerService) ChangeOldData(ctx context.Context, req ReqObj) (int, error) {
-//
-//	filter := bson.M{
-//		"projectId": req.ChangeProjectId,
-//	}
-//
-//	var oldData []model.Task5
-//	cursor, err := svc.CollectionTask5.Find(ctx, filter)
-//
-//	if err != nil {
-//		return -1, errors.New("1543")
-//	}
-//	err = cursor.All(ctx, &oldData)
-//	if err != nil {
-//		return -1, errors.New("1574")
-//	}
-//
-//	var project5 model.Project5
-//	if err := svc.CollectionProject5.FindOne(ctx, bson.M{"_id": req.NewProjectId}).Decode(&project5); err != nil {
-//		if errors.Is(err, mongo.ErrNoDocuments) {
-//			return -1, errors.New("项目不存在")
-//		}
-//		return -1, err
-//	}
-//	var folder5 model.Folder
-//	if err := svc.CollectionFolder5.FindOne(ctx, bson.M{"_id": project5.FolderID}).Decode(&folder5); err != nil {
-//		if errors.Is(err, mongo.ErrNoDocuments) {
-//			return -1, errors.New("文件夹不存在")
-//		}
-//		return -1, err
-//	}
-//
-//	//未分配和待标注只进旧表，已提交进新表 和 旧表
-//	allocateTask5 := make([]any, 0)    //原来未分配的进旧表
-//	submitTask5 := make([]any, 0)      //原来已提交的进旧表
-//	submitTask5ToNew := make([]any, 0) //已提交的进新表
-//	LabelingTask5 := make([]any, 0)    //待标注进旧表
-//	for index, data := range oldData {
-//
-//		//三种状态都需要重置taskID、FullName、projectID
-//		data.ID = primitive.NewObjectID()
-//		data.FullName = folder5.Name + "/" + project5.Name + "/" + oldData[index].Name
-//		data.ProjectID = req.NewProjectId
-//
-//		//未分配，对version、priority进行赋值就行
-//		if data.Status == model.TaskStatusAllocate {
-//
-//			for i2, _ := range data.Dialog {
-//				data.Dialog[i2].Version = 1
-//				data.Dialog[i2].Priority = 5
-//
-//			}
-//			allocateTask5 = append(allocateTask5, data)
-//		}
-//
-//		//已提交，对version、priority进行赋值
-//		if data.Status == model.TaskStatusSubmit {
-//			for i2, _ := range data.Dialog {
-//				data.Dialog[i2].Version = 1
-//				data.Dialog[i2].Priority = 4
-//			}
-//			submitTask5ToNew = append(submitTask5ToNew, data)
-//			//已提交进旧表的还需改变status和置空permissions
-//			data.Permissions = model.Permissions{}
-//			data.Status = model.TaskStatusAllocate
-//			submitTask5 = append(submitTask5, data)
-//		}
-//
-//		//待标注，对version、priority进行赋值
-//		if data.Status == model.TaskStatusLabeling {
-//			for i2, _ := range data.Dialog {
-//				data.Dialog[i2].Version = 1
-//				data.Dialog[i2].Priority = 5
-//			}
-//			////待标注进旧表的还需改变status和置空permissions
-//			data.Permissions = model.Permissions{}
-//			data.Status = model.TaskStatusAllocate
-//			LabelingTask5 = append(LabelingTask5, data)
-//		}
-//	}
-//
-//	//对就的问价夹中的task5进行删除，通过projectID进行匹配的
-//	//_, err = svc.CollectionTask5.DeleteMany(ctx, filter)
-//	//if err != nil {
-//	//	return -1,  errors.New("1617 删除old project task")
-//	//}
-//
-//	//未分配进旧表新文件夹
-//	if len(allocateTask5) > 0 {
-//		_, err = svc.CollectionTask5.InsertMany(ctx, allocateTask5)
-//		if err != nil {
-//			return -1, errors.New("1623 未分配进旧表新文件夹")
-//		}
-//	}
-//
-//	//已提交进旧表新文件夹
-//	if len(submitTask5) > 0 {
-//		_, err = svc.CollectionTask5.InsertMany(ctx, submitTask5)
-//		if err != nil {
-//			return -1, errors.New("1629 已提交进旧表新文件夹")
-//		}
-//	}
-//
-//	//已提交进新表新文件夹
-//	if len(submitTask5) > 0 {
-//		_, err = svc.CollectionLabeledTask5.InsertMany(ctx, submitTask5ToNew)
-//		if err != nil {
-//			return -1, errors.New("1635 已提交进新表新文件夹")
-//		}
-//	}
-//
-//	//待标注进旧表新文件夹
-//	if len(LabelingTask5) > 0 {
-//		_, err = svc.CollectionTask5.InsertMany(ctx, LabelingTask5)
-//		if err != nil {
-//			return -1, err
-//		}
-//	}
-//
-//	return 1, nil
-//}
