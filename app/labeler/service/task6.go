@@ -644,6 +644,23 @@ func (svc *LabelerService) GetTask6(ctx context.Context, req GetTask6Req, p *act
 			return GetTask6Resp{}, err
 		}
 	}
+	var project6 model.Project6
+	if err := svc.CollectionProject6.FindOne(ctx, bson.M{"_id": task.ProjectID}).Decode(&project6); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return GetTask6Resp{}, errors.New("项目不存在")
+		}
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return GetTask6Resp{}, err
+	}
+	var folder6 model.Folder
+	if err := svc.CollectionFolder6.FindOne(ctx, bson.M{"_id": project6.FolderID}).Decode(&folder6); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return GetTask6Resp{}, errors.New("文件夹不存在")
+		}
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return GetTask6Resp{}, err
+	}
+	task.FullName = folder6.Name + "/" + project6.Name + "/" + task.Name
 	res := GetTask6Resp{
 		Task6: task,
 	}
