@@ -176,6 +176,7 @@ type SearchTask5Resp struct {
 	Checker      string              `json:"checker"`
 	UpdateTime   util.Datetime       `json:"updateTime"`
 	Remark       bool                `json:"remark"`
+	RemarkLen    int                 `bson:"remarkLen" json:"remarkLen"`
 	WordCount    int                 `bson:"wordCount" json:"wordCount"`
 	EditQuantity int                 `bson:"editQuantity" json:"editQuantity"`
 	WorkQuantity int                 `bson:"workQuantity" json:"workQuantity"`
@@ -249,6 +250,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				EditQuantity: task.EditQuantity,
 				WorkQuantity: task.WorkQuantity,
 				Remark:       true,
+				RemarkLen:    task.RemarkLen,
 			}
 		} else {
 			res[i] = SearchTask5Resp{
@@ -263,6 +265,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				EditQuantity: task.EditQuantity,
 				WorkQuantity: task.WorkQuantity,
 				Remark:       false,
+				RemarkLen:    task.RemarkLen,
 			}
 		}
 	}
@@ -513,13 +516,16 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 		resultStr := strings.Join(content, "")
 		editQuantity = editDistance(resultStr, newResultStr) + editQuantity
 	}
-	workQuantity := task.WordCount + (editQuantity+len(req.Remark))*2
+	runeRemark := []rune(req.Remark)
+	remarkLen := len(runeRemark)
+	workQuantity := task.WordCount + (editQuantity+remarkLen)*2
 	task.Dialog = req.Dialog
 	task.UpdateTime = util.Datetime(time.Now())
 	update := bson.M{
 		"$set": bson.M{
 			"editQuantity":  editQuantity,
 			"remark":        req.Remark,
+			"remarkLen":     remarkLen,
 			"remarkOptions": req.RemarkOptions,
 			"score":         req.Score,
 			"dialog":        task.Dialog,
@@ -1061,9 +1067,11 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreR
 		}
 	} else {
 		filter = bson.M{
-			"projectId":        req.ProjectID,
-			"dialog.0.version": req.Version,
-			"hasScore":         true,
+			"projectId": req.ProjectID,
+			"dialog.0.version": bson.M{
+				"$in": req.Version,
+			},
+			"hasScore": true,
 		}
 	}
 
@@ -1204,7 +1212,7 @@ func getTask5WorkExcle(task5 []model.Task5, user map[int]string, req DownloadWor
 			s = append(s, "")
 		}
 		if req.RemarkQuantity {
-			s = append(s, len(task.Remark))
+			s = append(s, task.RemarkLen)
 		} else {
 			s = append(s, "")
 		}

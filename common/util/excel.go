@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"encoding/base64"
-	"fmt"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -99,9 +98,9 @@ func EmbedExcelData(excelName string, data [][]interface{}, ctx context.Context)
 		}
 	}
 
-	if err := f.SaveAs("测试.xlsx"); err != nil {
-		fmt.Println(err)
-	}
+	//if err := f.SaveAs("测试.xlsx"); err != nil {
+	//	fmt.Println(err)
+	//}
 
 	//f.SaveAs(excelName)
 	buf, _ := f.WriteToBuffer()
