@@ -16,6 +16,7 @@ type Task5 struct {
 	UpdateTime    util.Datetime      `bson:"updateTime" json:"updateTime"`
 	Dialog        []ContentText      `bson:"dialog" json:"dialog"`
 	Remark        string             `bson:"remark" json:"remark"`
+	RemarkLen     int                `bson:"remarkLen" json:"remarkLen"`
 	RemarkOptions int                `bson:"remarkOptions" json:"remarkOptions"`
 	WordCount     int                `bson:"wordCount" json:"wordCount"`       //阅读量
 	EditQuantity  int                `bson:"editQuantity" json:"editQuantity"` //修改量
