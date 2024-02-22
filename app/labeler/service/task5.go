@@ -356,7 +356,7 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 		return model.Task5{}, err
 	} else if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
-		return model.Task5{}, errors.New("当前用户没有可分配的任务")
+		return model.Task5{}, errors.New("当前没有可领取的新任务")
 	}
 
 	// 更新优先级
@@ -1047,7 +1047,8 @@ func (svc *LabelerService) SearchMyTask5Count(ctx context.Context, req SearchMyT
 }
 
 type DownloadScoreReq struct {
-	Version []int `json:"version"`
+	Version   []int              `json:"version"`
+	ProjectID primitive.ObjectID `json:"projectId"`
 }
 
 func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreReq) (DownloadTask2Resp, error) {
@@ -1055,11 +1056,12 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreR
 	filter := bson.M{}
 	if len(req.Version) == 0 {
 		filter = bson.M{
-
-			"hasScore": true,
+			"projectId": req.ProjectID,
+			"hasScore":  true,
 		}
 	} else {
 		filter = bson.M{
+			"projectId":        req.ProjectID,
 			"dialog.0.version": req.Version,
 			"hasScore":         true,
 		}
@@ -1105,14 +1107,15 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreR
 }
 
 type DownloadWorkloadReq struct {
-	PersonList      []string `json:"personList"`
-	WordCount       bool     `json:"wordCount"`
-	EditQuantity    bool     `json:"editQuantity"`
-	RemarkQuantity  bool     `json:"remarkQuantity"`
-	WorkQuantity    bool     `json:"workQuantity"`
-	TaskStatus      string   `json:"taskStatus"`
-	UpdateTimeStart string   `json:"updateTimeStart"`
-	UpdateTimeEnd   string   `json:"updateTimeEnd"`
+	PersonList      []string           `json:"personList"`
+	WordCount       bool               `json:"wordCount"`
+	EditQuantity    bool               `json:"editQuantity"`
+	RemarkQuantity  bool               `json:"remarkQuantity"`
+	WorkQuantity    bool               `json:"workQuantity"`
+	TaskStatus      string             `json:"taskStatus"`
+	UpdateTimeStart string             `json:"updateTimeStart"`
+	UpdateTimeEnd   string             `json:"updateTimeEnd"`
+	ProjectID       primitive.ObjectID `json:"projectId"`
 }
 
 func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWorkloadReq) (DownloadTask2Resp, error) {
@@ -1134,6 +1137,7 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 		"permissions.labeler.id": bson.M{
 			"$in": req.PersonList,
 		},
+		"projectId": req.ProjectID,
 	}
 
 	if len(req.UpdateTimeStart) > 0 && len(req.UpdateTimeEnd) > 0 {
