@@ -1101,7 +1101,25 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreR
 	}
 	nameStr := currentTimeString + "-Ubot:" + ubotVsersion + "-" + "打分情况"
 
-	excleData := getTask5ScoreExcle(task5)
+	idList := make([]string, len(task5))
+	for _, task := range task5 {
+		idList = append(idList, task.Permissions.Labeler.ID)
+	}
+
+	var users []models.SysUser
+	db := svc.GormDB.WithContext(ctx).Where("user_id IN (?)", idList).
+		Find(&users)
+
+	nicknameList := make(map[string]string, len(users))
+	for _, user := range users {
+		nicknameList[strconv.Itoa(user.UserId)] = user.NickName
+	}
+
+	if err := db.Error; err != nil {
+		return DownloadTask2Resp{}, err
+	}
+
+	excleData := getTask5ScoreExcle(task5, nicknameList)
 	data, filename, err := util.EmbedExcelData(
 		nameStr,
 		excleData,
@@ -1127,6 +1145,14 @@ type DownloadWorkloadReq struct {
 }
 
 func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWorkloadReq) (DownloadTask2Resp, error) {
+
+	//req.bool全为false时变为全为true
+	if req.RemarkQuantity == false && req.WordCount == false && req.EditQuantity == false && req.WorkQuantity == false {
+		req.RemarkQuantity = true
+		req.WordCount = true
+		req.EditQuantity = true
+		req.WorkQuantity = true
+	}
 
 	var users []models.SysUser
 	db := svc.GormDB.WithContext(ctx).Where("user_id IN (?)", req.PersonList).
@@ -1175,12 +1201,15 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return DownloadTask2Resp{}, err
 	}
-
-	if err != nil {
-		log.Logger().WithContext(ctx).Error(err.Error())
-		return DownloadTask2Resp{}, err
+	nameStr := ""
+	if len(req.UpdateTimeStart) > 0 {
+		nameStr += "StartTime:" + req.UpdateTimeStart
 	}
-	nameStr := req.UpdateTimeStart + "-" + req.UpdateTimeEnd + " "
+	if len(req.UpdateTimeEnd) > 0 {
+		nameStr += "EndTime:" + req.UpdateTimeEnd
+	}
+	nameStr += "DownloadTime:"
+
 	columns := []string{"咨询师", "阅读量", "修改量", "点评量", "工作量"}
 	excelData := getTask5WorkExcle(task5, userMap, req)
 
@@ -1225,7 +1254,7 @@ func getTask5WorkExcle(task5 []model.Task5, user map[int]string, req DownloadWor
 	}
 	return data
 }
-func getTask5ScoreExcle(task5 []model.Task5) [][]interface{} {
+func getTask5ScoreExcle(task5 []model.Task5, nicknameList map[string]string) [][]interface{} {
 	var data [][]interface{}
 	for _, task := range task5 {
 
@@ -1233,7 +1262,7 @@ func getTask5ScoreExcle(task5 []model.Task5) [][]interface{} {
 
 		s = append(s, task.Dialog[0].Version)
 		s = append(s, task.Name)
-		s = append(s, task.Permissions.Labeler.ID)
+		s = append(s, nicknameList[task.Permissions.Labeler.ID])
 		s = append(s, task.Score.IdentifyRisk)
 		s = append(s, task.Score.UnderstandingVisitor)
 		s = append(s, task.Score.ExpressingCare)
