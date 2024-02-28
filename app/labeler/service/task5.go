@@ -1267,7 +1267,7 @@ func getTask5WorkExcle(results []bson.M, user map[int]string, req DownloadWorklo
 			s = append(s, "")
 		}
 		if req.RemarkQuantity {
-			remarkQuantity, _ := result["remarkQuantity"].(int32)
+			remarkQuantity, _ := result["remarkLen"].(int32)
 			s = append(s, remarkQuantity)
 		} else {
 			s = append(s, "")
