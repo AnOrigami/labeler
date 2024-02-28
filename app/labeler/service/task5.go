@@ -1189,18 +1189,43 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 		}
 	}
 
-	var task5 []model.Task5
+	pipe := mongo.Pipeline{
+		bson.D{
+			{
+				"$match",
+				filter,
+			},
+		},
+		bson.D{
+			{
+				"$group",
+				bson.D{
+					{"_id", "$permissions.labeler.id"},
+					//{"permissions_labeler_id", bson.D{{"$first", "$permissions.labeler.id"}}},
+					{"remarkLen", bson.D{{"$sum", "$remarkLen"}}},
+					{"wordCount", bson.D{{"$sum", "$wordCount"}}},
+					{"editQuantity", bson.D{{"$sum", "$editQuantity"}}},
+					{"workQuantity", bson.D{{"$sum", "$workQuantity"}}},
+				},
+			},
+		},
+	}
 
-	cur, err := svc.CollectionLabeledTask5.Find(ctx, filter)
+	cursor, err := svc.CollectionLabeledTask5.Aggregate(ctx, pipe)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return DownloadTask2Resp{}, err
 	}
-	err = cur.All(ctx, &task5)
-	if err != nil {
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	var results []bson.M
+	if err = cursor.All(ctx, &results); err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return DownloadTask2Resp{}, err
 	}
+
 	nameStr := ""
 	if len(req.UpdateTimeStart) > 0 {
 		nameStr += "StartTime:" + req.UpdateTimeStart
@@ -1211,7 +1236,7 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 	nameStr += "DownloadTime:"
 
 	columns := []string{"咨询师", "阅读量", "修改量", "点评量", "工作量"}
-	excelData := getTask5WorkExcle(task5, userMap, req)
+	excelData := getTask5WorkExcle(results, userMap, req)
 
 	data, filename, err := util.CreateExcelFile(
 		excelData,
@@ -1223,30 +1248,33 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 	}
 	return DownloadTask2Resp{File: data, FileName: filename}, nil
 }
-func getTask5WorkExcle(task5 []model.Task5, user map[int]string, req DownloadWorkloadReq) [][]interface{} {
+func getTask5WorkExcle(results []bson.M, user map[int]string, req DownloadWorkloadReq) [][]interface{} {
 	var data [][]interface{}
-	for _, task := range task5 {
-
+	for _, result := range results {
 		s := []interface{}{}
-		userId, _ := strconv.Atoi(task.Permissions.Labeler.ID)
+		userId, _ := strconv.Atoi(result["_id"].(string))
 		s = append(s, user[userId])
 		if req.WordCount {
-			s = append(s, task.WordCount)
+			wordCount, _ := result["wordCount"].(int32)
+			s = append(s, wordCount)
 		} else {
 			s = append(s, "")
 		}
 		if req.EditQuantity {
-			s = append(s, task.EditQuantity)
+			editQuantity, _ := result["editQuantity"].(int32)
+			s = append(s, editQuantity)
 		} else {
 			s = append(s, "")
 		}
 		if req.RemarkQuantity {
-			s = append(s, task.RemarkLen)
+			remarkQuantity, _ := result["remarkQuantity"].(int32)
+			s = append(s, remarkQuantity)
 		} else {
 			s = append(s, "")
 		}
 		if req.WorkQuantity {
-			s = append(s, task.WorkQuantity)
+			workQuantity, _ := result["workQuantity"].(int32)
+			s = append(s, workQuantity)
 		} else {
 			s = append(s, "")
 		}
