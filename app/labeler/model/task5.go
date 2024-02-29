@@ -14,6 +14,7 @@ type Task5 struct {
 	Status        string             `bson:"status" json:"status"`
 	Permissions   Permissions        `bson:"permissions" json:"permissions"`
 	UpdateTime    util.Datetime      `bson:"updateTime" json:"updateTime"`
+	SubmittedTime util.Datetime      `bson:"submittedTime" json:"submittedTime"`
 	Dialog        []ContentText      `bson:"dialog" json:"dialog"`
 	Remark        string             `bson:"remark" json:"remark"`
 	RemarkLen     int                `bson:"remarkLen" json:"remarkLen"`
@@ -24,6 +25,7 @@ type Task5 struct {
 	Score         Scores             `bson:"score" json:"score"`
 	HasScore      bool               `bson:"hasScore" json:"hasScore"`
 }
+
 type Scores struct {
 	//能准确识别风险并提出转介建议
 	IdentifyRisk int `bson:"identifyRisk" json:"identifyRisk"`

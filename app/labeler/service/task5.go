@@ -614,12 +614,24 @@ func (svc *LabelerService) BatchSetTask5Status(ctx context.Context, req BatchSet
 	//任务状态为{待审核}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
 	//
 	//任务状态为{已审核}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
-	update := bson.M{
-		"$set": bson.M{
-			"status":     req.Status,
-			"updateTime": util.Datetime(time.Now()),
-		},
+	update := bson.M{}
+	if req.Status == model.TaskStatusSubmit {
+		update = bson.M{
+			"$set": bson.M{
+				"status":        req.Status,
+				"updateTime":    util.Datetime(time.Now()),
+				"submittedTime": util.Datetime(time.Now()),
+			},
+		}
+	} else {
+		update = bson.M{
+			"$set": bson.M{
+				"status":     req.Status,
+				"updateTime": util.Datetime(time.Now()),
+			},
+		}
 	}
+
 	if req.WorkType != 0 {
 		if validSourceStatus := normalStatusMap[req.Status]; validSourceStatus != nil {
 			filter["status"] = bson.M{
@@ -750,10 +762,12 @@ func (svc *LabelerService) DeleteTask5(ctx context.Context, id primitive.ObjectI
 }
 
 type DownloadTask5Req struct {
-	ProjectID       primitive.ObjectID `json:"projectId"`
-	Status          []string           `json:"status"`
-	UpdateTimeStart string             `json:"updateTimeStart"`
-	UpdateTimeEnd   string             `json:"updateTimeEnd"`
+	ProjectID          primitive.ObjectID `json:"projectId"`
+	Status             []string           `json:"status"`
+	UpdateTimeStart    string             `json:"updateTimeStart"`
+	UpdateTimeEnd      string             `json:"updateTimeEnd"`
+	SubmittedTimeStart string             `json:"submittedTimeStart"`
+	SubmittedTimeEnd   string             `json:"submittedTimeEnd"`
 }
 
 type DownloadTask5Resp struct {
@@ -779,6 +793,21 @@ func (svc *LabelerService) DownloadTask5(ctx context.Context, req DownloadTask5R
 			return DownloadTask5Resp{}, ErrTimeParse
 		}
 		filter["updateTime"] = bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		}
+	}
+
+	if len(req.SubmittedTimeStart) > 0 && len(req.SubmittedTimeEnd) > 0 {
+		startTime, err := time.Parse(util.TimeLayoutDatetime, req.SubmittedTimeStart)
+		if err != nil {
+			return DownloadTask5Resp{}, ErrTimeParse
+		}
+		endTime, err := time.Parse(util.TimeLayoutDatetime, req.SubmittedTimeEnd)
+		if err != nil {
+			return DownloadTask5Resp{}, ErrTimeParse
+		}
+		filter["submittedTime"] = bson.M{
 			"$gte": startTime,
 			"$lte": endTime,
 		}
@@ -1785,10 +1814,6 @@ func editDistance(s1, s2 string) int {
 	}
 
 	return dp[m][n]
-}
-
-type Req struct {
-	ProjectID primitive.ObjectID `json:"projectId"`
 }
 
 func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []string) []string {
