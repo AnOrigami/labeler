@@ -39,7 +39,7 @@ func task5AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t5/action", api.GetActionTags())
 		g.POST("/api/v1/labeler/t5/downloadscore", api.DownloadScore())
 		g.POST("/api/v1/labeler/t5/downloadworkload", api.DownloadWorkload())
-
+		g.POST("/api/v1/labeler/t5/proportionalScoring", api.ProportionalScoring())
 	}
 }
 
@@ -416,5 +416,23 @@ func (api *LabelerAPI) DownloadWorkload() GinHandler {
 			return
 		}
 		response.OK(c, resp, "查询成功")
+	}
+}
+
+func (api *LabelerAPI) ProportionalScoring() GinHandler {
+	return func(c *gin.Context) {
+		var req service.ProportionalScoringReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		resp, err := api.LabelerService.ProportionalScoring(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, resp, "成功")
 	}
 }

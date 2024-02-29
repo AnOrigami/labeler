@@ -24,6 +24,7 @@ type Task5 struct {
 	WorkQuantity  int                `bson:"workQuantity" json:"workQuantity"` //工作量
 	Score         Scores             `bson:"score" json:"score"`
 	HasScore      bool               `bson:"hasScore" json:"hasScore"`
+	RequireScore  int                `bson:"requireScore" json:"requireScore"`
 }
 
 type Scores struct {
