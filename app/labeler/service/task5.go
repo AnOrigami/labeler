@@ -362,14 +362,20 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 		return model.Task5{}, errors.New("当前没有可领取的新任务")
 	}
 
-	// 更新优先级
+	// 更新优先级 更新RequireScore字段
 	var newDialog []model.ContentText
 	for _, dialog := range resp.Dialog {
 		dialog.Priority = dialog.Priority - 1
 		newDialog = append(newDialog, dialog)
 	}
 	updateFilter := bson.M{"_id": resp.ID}
-	update := bson.M{"$set": bson.M{"dialog": newDialog}}
+	var update bson.M
+
+	if resp.RequireScore == 1 {
+		update = bson.M{"$set": bson.M{"dialog": newDialog, "requireScore": 2}}
+	} else {
+		update = bson.M{"$set": bson.M{"dialog": newDialog}}
+	}
 
 	_, err = svc.CollectionTask5.UpdateOne(ctx, updateFilter, update)
 	if err != nil {
@@ -1277,6 +1283,95 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 	}
 	return DownloadTask2Resp{File: data, FileName: filename}, nil
 }
+
+type ProportionalScoringReq struct {
+	ProjectID  primitive.ObjectID `json:"projectID"`
+	Version    []int              `json:"version"`
+	Proportion float32            `json:"proportion"`
+}
+
+type ProportionalScoringResp struct {
+	MatchedCount  int64 `json:"matchedCount"`
+	ModifiedCount int64 `json:"modifiedCount"`
+}
+
+func (svc *LabelerService) ProportionalScoring(ctx context.Context, req ProportionalScoringReq) (ProportionalScoringResp, error) {
+
+	if req.Proportion > 1 || req.Proportion <= 0 {
+		return ProportionalScoringResp{}, errors.New("概率必须大于0小于等于1")
+	}
+
+	var resp ProportionalScoringResp
+
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"dialog.0.version": bson.M{
+			"$in": req.Version,
+		},
+		"requireScore": 0,
+	}
+
+	var err error
+	resp.MatchedCount, err = svc.CollectionTask5.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return ProportionalScoringResp{}, err
+	}
+
+	resp.ModifiedCount = int64(float32(resp.MatchedCount) * req.Proportion)
+
+	pipeline := mongo.Pipeline{
+		bson.D{
+			{
+				"$match",
+				filter,
+			},
+		},
+		bson.D{
+			{
+				"$sample",
+				bson.D{
+					{"size", resp.ModifiedCount},
+				},
+			},
+		},
+	}
+	var modifyTask []model.Task5
+
+	cursor, err := svc.CollectionTask5.Aggregate(ctx, pipeline)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return ProportionalScoringResp{}, err
+	}
+	err = cursor.All(ctx, &modifyTask)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return ProportionalScoringResp{}, err
+	}
+	modifyIdList := make([]primitive.ObjectID, len(modifyTask))
+	for _, task := range modifyTask {
+		modifyIdList = append(modifyIdList, task.ID)
+	}
+	modifyFilter := bson.M{
+		"_id": bson.M{
+			"$in": modifyIdList,
+		},
+	}
+
+	update := bson.D{
+		{"$set", bson.D{
+			{"requireScore", 1},
+		}},
+	}
+	_, err = svc.CollectionTask5.UpdateMany(context.Background(), modifyFilter, update)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return ProportionalScoringResp{}, err
+	}
+	return resp, nil
+
+}
+
 func getTask5WorkExcle(results []bson.M, user map[int]string, req DownloadWorkloadReq) [][]interface{} {
 	var data [][]interface{}
 	for _, result := range results {
@@ -1311,6 +1406,7 @@ func getTask5WorkExcle(results []bson.M, user map[int]string, req DownloadWorklo
 	}
 	return data
 }
+
 func getTask5ScoreExcle(task5 []model.Task5, nicknameList map[string]string) [][]interface{} {
 	var data [][]interface{}
 	for _, task := range task5 {
