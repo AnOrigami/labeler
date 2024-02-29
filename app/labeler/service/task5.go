@@ -168,19 +168,20 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 type SearchTask5Req = SearchTaskReq
 
 type SearchTask5Resp struct {
-	ID           primitive.ObjectID  `json:"id"`
-	ProjectID    primitive.ObjectID  `json:"projectId"`
-	Name         string              `json:"name"`
-	Status       string              `json:"status"`
-	Labeler      string              `json:"labeler"`
-	Checker      string              `json:"checker"`
-	UpdateTime   util.Datetime       `json:"updateTime"`
-	Remark       bool                `json:"remark"`
-	RemarkLen    int                 `bson:"remarkLen" json:"remarkLen"`
-	WordCount    int                 `bson:"wordCount" json:"wordCount"`
-	EditQuantity int                 `bson:"editQuantity" json:"editQuantity"`
-	WorkQuantity int                 `bson:"workQuantity" json:"workQuantity"`
-	Dialog       []model.ContentText `json:"dialog"`
+	ID            primitive.ObjectID  `json:"id"`
+	ProjectID     primitive.ObjectID  `json:"projectId"`
+	Name          string              `json:"name"`
+	Status        string              `json:"status"`
+	Labeler       string              `json:"labeler"`
+	Checker       string              `json:"checker"`
+	UpdateTime    util.Datetime       `json:"updateTime"`
+	SubmittedTime util.Datetime       `json:"submittedTime"`
+	Remark        bool                `json:"remark"`
+	RemarkLen     int                 `bson:"remarkLen" json:"remarkLen"`
+	WordCount     int                 `bson:"wordCount" json:"wordCount"`
+	EditQuantity  int                 `bson:"editQuantity" json:"editQuantity"`
+	WorkQuantity  int                 `bson:"workQuantity" json:"workQuantity"`
+	Dialog        []model.ContentText `json:"dialog"`
 }
 
 func (svc *LabelerService) SearchTask5(ctx context.Context, req SearchTask5Req) ([]SearchTask5Resp, int, error) {
@@ -239,18 +240,19 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 		}
 		if task.Remark != "" {
 			res[i] = SearchTask5Resp{
-				ID:           task.ID,
-				ProjectID:    task.ProjectID,
-				Name:         task.Name,
-				Status:       task.Status,
-				Labeler:      labeler,
-				UpdateTime:   task.UpdateTime,
-				Dialog:       task.Dialog,
-				WordCount:    task.WordCount,
-				EditQuantity: task.EditQuantity,
-				WorkQuantity: task.WorkQuantity,
-				Remark:       true,
-				RemarkLen:    task.RemarkLen,
+				ID:            task.ID,
+				ProjectID:     task.ProjectID,
+				Name:          task.Name,
+				Status:        task.Status,
+				Labeler:       labeler,
+				UpdateTime:    task.UpdateTime,
+				Dialog:        task.Dialog,
+				WordCount:     task.WordCount,
+				EditQuantity:  task.EditQuantity,
+				WorkQuantity:  task.WorkQuantity,
+				Remark:        true,
+				RemarkLen:     task.RemarkLen,
+				SubmittedTime: task.SubmittedTime,
 			}
 		} else {
 			res[i] = SearchTask5Resp{
