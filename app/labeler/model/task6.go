@@ -16,4 +16,5 @@ type Task6 struct {
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
 	Rpg         bson.M             `bson:"rpg" json:"rpg"`
+	Version     int                `bson:"version" json:"version"`
 }

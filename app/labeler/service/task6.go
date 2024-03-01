@@ -281,6 +281,7 @@ type UpdateTask6Req struct {
 	UserDataScope string             `json:"-"`
 	ID            primitive.ObjectID `json:"id"`
 	Rpg           bson.M             `json:"rpg"`
+	Version       int                `json:"version"`
 }
 
 func (svc *LabelerService) UpdateTask6(ctx context.Context, req UpdateTask6Req) (model.Task6, error) {
@@ -302,11 +303,16 @@ func (svc *LabelerService) UpdateTask6(ctx context.Context, req UpdateTask6Req) 
 		"$set": bson.M{
 			"rpg":        task.Rpg,
 			"updateTime": task.UpdateTime,
+			"version":    req.Version,
 		},
 	}
-	if _, err := svc.CollectionTask6.UpdateByID(ctx, req.ID, update); err != nil {
-		log.Logger().WithContext(ctx).Error("update task: ", err.Error())
-		return model.Task6{}, err
+	fiter := bson.M{
+		"_id":     req.ID,
+		"version": req.Version - 1,
+	}
+	if _, err := svc.CollectionTask6.UpdateOne(ctx, fiter, update); err != nil {
+		log.Logger().WithContext(ctx).Error("查询的文档不存在或版本过旧,请刷新重试", err.Error())
+		return model.Task6{}, errors.New("查询的文档不存在或版本过旧,请刷新重试")
 	}
 	return task, nil
 }
