@@ -49,25 +49,35 @@ type Scores struct {
 }
 
 type ContentText struct {
-	SessionID    string         `bson:"sessionId" json:"session_id"`
-	TurnID       int            `bson:"turnId" json:"turn_id"`
-	UserContent  string         `bson:"userContent" json:"user_content"`
-	BotResponse  string         `bson:"botResponse" json:"bot_response"`
-	States       string         `bson:"states" json:"states"`
-	Actions      []Action       `bson:"actions" json:"actions"`
-	CreatedAt    string         `bson:"createdAt" json:"created_at"`
-	ModelOutputs []ModelOutput  `bson:"modelOutputs" json:"model_output"`
-	UserID       string         `bson:"userId" json:"user_id"`
-	LikeFlag     string         `bson:"likeFlag" json:"like_flag"`
-	Feedback     string         `bson:"feedback" json:"feedback"`
-	NewAction    []Action       `bson:"newAction" json:"new_action"`
-	NewOutputs   []ModelOutput  `bson:"newOutputs" json:"new_outputs"`
-	Entities     []EntityOption `bson:"entities" json:"entities"`
-	Edit         bool           `bson:"edit" json:"edit"`
-	Skip         int            `bson:"skip" json:"skip"`
-	Version      int            `bson:"version" json:"version"`
-	Priority     int            `bson:"priority" json:"priority"`
+	SessionID     string         `bson:"sessionId" json:"session_id"`
+	TurnID        int            `bson:"turnId" json:"turn_id"`
+	UserContent   string         `bson:"userContent" json:"user_content"`
+	BotResponse   string         `bson:"botResponse" json:"bot_response"`
+	States        string         `bson:"states" json:"states"`
+	Actions       []Action       `bson:"actions" json:"actions"`
+	CreatedAt     string         `bson:"createdAt" json:"created_at"`
+	ModelOutputs  []ModelOutput  `bson:"modelOutputs" json:"model_output"`
+	UserID        string         `bson:"userId" json:"user_id"`
+	LikeFlag      string         `bson:"likeFlag" json:"like_flag"`
+	Feedback      string         `bson:"feedback" json:"feedback"`
+	NewAction     []Action       `bson:"newAction" json:"new_action"`
+	NewOutputs    []ModelOutput  `bson:"newOutputs" json:"new_outputs"`
+	Entities      []EntityOption `bson:"entities" json:"entities"`
+	Edit          bool           `bson:"edit" json:"edit"`
+	Skip          int            `bson:"skip" json:"skip"`
+	Version       int            `bson:"version" json:"version"`
+	Priority      int            `bson:"priority" json:"priority"`
+	FourQuadrants string         `bson:"fourQuadrants" json:"fourQuadrants"`
+	StepFrame     string         `bson:"stepFrame" json:"stepFrame"`
+	UserMessages  UserMessage    `bson:"userMessages" json:"userMessages"`
 }
+
+type UserMessage struct {
+	UserWant      string `bson:"userWant" json:"userWant"`
+	UserImportant string `bson:"userImportant" json:"userImportant"`
+	UserAbility   string `bson:"userAbility" json:"userAbility"`
+}
+
 type EntityOption struct {
 	Class         string `bson:"class" json:"class"`
 	Num           int    `json:"num" json:"num"`
