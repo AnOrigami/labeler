@@ -310,11 +310,18 @@ func (svc *LabelerService) UpdateTask6(ctx context.Context, req UpdateTask6Req) 
 		"_id":     req.ID,
 		"version": req.Version - 1,
 	}
-	if _, err := svc.CollectionTask6.UpdateOne(ctx, fiter, update); err != nil {
+	updateResult, err := svc.CollectionTask6.UpdateOne(ctx, fiter, update)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return model.Task6{}, err
+	}
+
+	if updateResult.MatchedCount == 0 {
 		log.Logger().WithContext(ctx).Error("查询的文档不存在或版本过旧,请刷新重试", err.Error())
 		return model.Task6{}, errors.New("查询的文档不存在或版本过旧,请刷新重试")
+	} else {
+		return model.Task6{}, nil
 	}
-	return task, nil
 }
 
 type BatchSetTask6StatusReq struct {

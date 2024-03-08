@@ -523,6 +523,9 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 		newResultStr := strings.Join(newContent, "")
 		resultStr := strings.Join(content, "")
 		editQuantity = editDistance(resultStr, newResultStr) + editQuantity
+		editQuantity = editDistance(oneDialog.UserMessages.UserWant, task.Dialog[i].UserMessages.UserWant) + editQuantity
+		editQuantity = editDistance(oneDialog.UserMessages.UserImportant, task.Dialog[i].UserMessages.UserImportant) + editQuantity
+		editQuantity = editDistance(oneDialog.UserMessages.UserAbility, task.Dialog[i].UserMessages.UserAbility) + editQuantity
 	}
 	runeRemark := []rune(req.Remark)
 	remarkLen := len(runeRemark)
@@ -1926,3 +1929,58 @@ func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []strin
 	}
 	return names
 }
+
+//type Req struct {
+//	ProjectID primitive.ObjectID `json:"projectId"`
+//}
+//
+//func (svc *LabelerService) SearchTask5Count(ctx context.Context, req Req) ([]model.Task5, error) {
+//	filter := bson.M{
+//		"projectId": req.ProjectID,
+//	}
+//
+//	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter)
+//	if err != nil {
+//		log.Logger().WithContext(ctx).Error(err.Error())
+//		return nil, err
+//	}
+//
+//	var tasks []model.Task5
+//	if err := cursor.All(ctx, &tasks); err != nil {
+//		log.Logger().WithContext(ctx).Error(err.Error())
+//		return nil, err
+//	}
+//
+//	for i, task := range tasks {
+//		var workQuantity, wordCount int
+//		var remarkLen int
+//		for _, oneDialog := range task.Dialog {
+//			wordCount = utf8.RuneCountInString(oneDialog.UserContent) + utf8.RuneCountInString(oneDialog.BotResponse) + wordCount
+//		}
+//		tasks[i].WordCount = wordCount
+//
+//		runeRemark := []rune(task.Remark)
+//		remarkLen = len(runeRemark)
+//		workQuantity = (task.EditQuantity+remarkLen)*2 + wordCount
+//
+//		tasks[i].RemarkLen = remarkLen
+//		tasks[i].WorkQuantity = workQuantity
+//		update := bson.M{
+//			"$set": bson.M{
+//				"remarkLen":    remarkLen,
+//				"workQuantity": workQuantity,
+//				"wordCount":    wordCount,
+//			},
+//		}
+//		if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, task.ID, update); err != nil {
+//			log.Logger().WithContext(ctx).Error("update task: ", err.Error())
+//			return nil, err
+//		}
+//	}
+//
+//	if err != nil {
+//		log.Logger().WithContext(ctx).Error(err.Error())
+//		return nil, err
+//	}
+//	return tasks, nil
+//}
