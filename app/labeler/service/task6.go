@@ -293,6 +293,7 @@ func (svc *LabelerService) UpdateTask6(ctx context.Context, req UpdateTask6Req) 
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return model.Task6{}, err
 	}
+
 	if req.UserDataScope != "1" && req.UserDataScope != "2" && !task.Permissions.IsLabeler(req.UserID) && !task.Permissions.IsChecker(req.UserID) {
 		return model.Task6{}, errors.New("权限不足")
 	}
@@ -306,16 +307,27 @@ func (svc *LabelerService) UpdateTask6(ctx context.Context, req UpdateTask6Req) 
 			"version":    req.Version,
 		},
 	}
-	fiter := bson.M{
-		"_id":     req.ID,
-		"version": req.Version - 1,
+
+	filter := bson.M{}
+	if req.Version == 1 {
+		filter = bson.M{
+			"_id": req.ID,
+			"$or": bson.A{
+				bson.M{"version": 0},
+				bson.M{"version": bson.M{"$exists": false}},
+			},
+		}
+	} else {
+		filter = bson.M{
+			"_id":     req.ID,
+			"version": req.Version - 1,
+		}
 	}
-	updateResult, err := svc.CollectionTask6.UpdateOne(ctx, fiter, update)
+	updateResult, err := svc.CollectionTask6.UpdateOne(ctx, filter, update)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return model.Task6{}, err
 	}
-
 	if updateResult.MatchedCount == 0 {
 		log.Logger().WithContext(ctx).Warn("查询的文档不存在或版本过旧,请刷新重试,version=", req.Version)
 		return model.Task6{}, errors.New("查询的文档不存在或版本过旧,请刷新重试")
