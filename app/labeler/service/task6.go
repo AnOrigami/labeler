@@ -317,7 +317,7 @@ func (svc *LabelerService) UpdateTask6(ctx context.Context, req UpdateTask6Req) 
 	}
 
 	if updateResult.MatchedCount == 0 {
-		log.Logger().WithContext(ctx).Error("查询的文档不存在或版本过旧,请刷新重试", err.Error())
+		log.Logger().WithContext(ctx).Warn("查询的文档不存在或版本过旧,请刷新重试,version=", req.Version)
 		return model.Task6{}, errors.New("查询的文档不存在或版本过旧,请刷新重试")
 	} else {
 		return model.Task6{}, nil
