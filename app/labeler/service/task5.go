@@ -397,6 +397,11 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 	//为分配出来的task5创建新的ID，以便insert进新表
 	resp.ID = primitive.NewObjectID()
 	resp.Status = model.TaskStatusLabeling
+	for i := range resp.Dialog {
+		resp.Dialog[i].UserMessages.UserWant = "无相关信息"
+		resp.Dialog[i].UserMessages.UserImportant = "无相关信息"
+		resp.Dialog[i].UserMessages.UserAbility = "无相关信息"
+	}
 
 	_, err = svc.CollectionLabeledTask5.InsertOne(ctx, resp)
 	if err != nil {
@@ -523,9 +528,9 @@ func (svc *LabelerService) UpdateTask5(ctx context.Context, req UpdateTask5Req) 
 		newResultStr := strings.Join(newContent, "")
 		resultStr := strings.Join(content, "")
 		editQuantity = editDistance(resultStr, newResultStr) + editQuantity
-		editQuantity = editDistance(oneDialog.UserMessages.UserWant, task.Dialog[i].UserMessages.UserWant) + editQuantity
-		editQuantity = editDistance(oneDialog.UserMessages.UserImportant, task.Dialog[i].UserMessages.UserImportant) + editQuantity
-		editQuantity = editDistance(oneDialog.UserMessages.UserAbility, task.Dialog[i].UserMessages.UserAbility) + editQuantity
+		editQuantity = editDistance(task.Dialog[i].UserMessages.UserWant, oneDialog.UserMessages.UserWant) + editQuantity
+		editQuantity = editDistance(task.Dialog[i].UserMessages.UserImportant, oneDialog.UserMessages.UserImportant) + editQuantity
+		editQuantity = editDistance(task.Dialog[i].UserMessages.UserAbility, oneDialog.UserMessages.UserAbility) + editQuantity
 	}
 	runeRemark := []rune(req.Remark)
 	remarkLen := len(runeRemark)
@@ -1173,15 +1178,17 @@ func (svc *LabelerService) DownloadScore(ctx context.Context, req DownloadScoreR
 }
 
 type DownloadWorkloadReq struct {
-	PersonList      []string           `json:"personList"`
-	WordCount       bool               `json:"wordCount"`
-	EditQuantity    bool               `json:"editQuantity"`
-	RemarkQuantity  bool               `json:"remarkQuantity"`
-	WorkQuantity    bool               `json:"workQuantity"`
-	TaskStatus      string             `json:"taskStatus"`
-	UpdateTimeStart string             `json:"updateTimeStart"`
-	UpdateTimeEnd   string             `json:"updateTimeEnd"`
-	ProjectID       primitive.ObjectID `json:"projectId"`
+	PersonList         []string           `json:"personList"`
+	WordCount          bool               `json:"wordCount"`
+	EditQuantity       bool               `json:"editQuantity"`
+	RemarkQuantity     bool               `json:"remarkQuantity"`
+	WorkQuantity       bool               `json:"workQuantity"`
+	TaskStatus         string             `json:"taskStatus"`
+	UpdateTimeStart    string             `json:"updateTimeStart"`
+	UpdateTimeEnd      string             `json:"updateTimeEnd"`
+	ProjectID          primitive.ObjectID `json:"projectId"`
+	SubmittedTimeStart string             `json:"submittedTimeStart"`
+	SubmittedTimeEnd   string             `json:"submittedTimeEnd"`
 }
 
 func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWorkloadReq) (DownloadTask2Resp, error) {
@@ -1224,6 +1231,21 @@ func (svc *LabelerService) DownloadWorkload(ctx context.Context, req DownloadWor
 			return DownloadTask2Resp{}, ErrTimeParse
 		}
 		filter["updateTime"] = bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		}
+	}
+
+	if len(req.SubmittedTimeStart) > 0 && len(req.SubmittedTimeEnd) > 0 {
+		startTime, err := time.Parse(util.TimeLayoutDatetime, req.SubmittedTimeStart)
+		if err != nil {
+			return DownloadTask2Resp{}, ErrTimeParse
+		}
+		endTime, err := time.Parse(util.TimeLayoutDatetime, req.SubmittedTimeEnd)
+		if err != nil {
+			return DownloadTask2Resp{}, ErrTimeParse
+		}
+		filter["submittedTime"] = bson.M{
 			"$gte": startTime,
 			"$lte": endTime,
 		}
@@ -1930,57 +1952,52 @@ func repeatingTask5s(sessionIDs []string, task5s []model.Task5, filename []strin
 	return names
 }
 
-//type Req struct {
-//	ProjectID primitive.ObjectID `json:"projectId"`
-//}
-//
-//func (svc *LabelerService) SearchTask5Count(ctx context.Context, req Req) ([]model.Task5, error) {
-//	filter := bson.M{
-//		"projectId": req.ProjectID,
-//	}
-//
-//	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter)
-//	if err != nil {
-//		log.Logger().WithContext(ctx).Error(err.Error())
-//		return nil, err
-//	}
-//
-//	var tasks []model.Task5
-//	if err := cursor.All(ctx, &tasks); err != nil {
-//		log.Logger().WithContext(ctx).Error(err.Error())
-//		return nil, err
-//	}
-//
-//	for i, task := range tasks {
-//		var workQuantity, wordCount int
-//		var remarkLen int
-//		for _, oneDialog := range task.Dialog {
-//			wordCount = utf8.RuneCountInString(oneDialog.UserContent) + utf8.RuneCountInString(oneDialog.BotResponse) + wordCount
-//		}
-//		tasks[i].WordCount = wordCount
-//
-//		runeRemark := []rune(task.Remark)
-//		remarkLen = len(runeRemark)
-//		workQuantity = (task.EditQuantity+remarkLen)*2 + wordCount
-//
-//		tasks[i].RemarkLen = remarkLen
-//		tasks[i].WorkQuantity = workQuantity
-//		update := bson.M{
-//			"$set": bson.M{
-//				"remarkLen":    remarkLen,
-//				"workQuantity": workQuantity,
-//				"wordCount":    wordCount,
-//			},
-//		}
-//		if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, task.ID, update); err != nil {
-//			log.Logger().WithContext(ctx).Error("update task: ", err.Error())
-//			return nil, err
-//		}
-//	}
-//
-//	if err != nil {
-//		log.Logger().WithContext(ctx).Error(err.Error())
-//		return nil, err
-//	}
-//	return tasks, nil
-//}
+type Req struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+}
+
+func (svc *LabelerService) SearchTask5Count(ctx context.Context, req Req) (int, error) {
+	filter := bson.M{
+		"projectId": req.ProjectID,
+	}
+
+	cursor, err := svc.CollectionLabeledTask5.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return 0, err
+	}
+
+	var tasks []model.Task5
+	if err := cursor.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return 0, err
+	}
+	var updateCount int
+	for _, task := range tasks {
+		var isUpdate bool
+		parts := strings.Split(task.Name, ".")
+		sessionId := parts[0]
+		for j, v := range task.Dialog {
+			if v.SessionID == "" {
+				task.Dialog[j].SessionID = sessionId
+				isUpdate = true
+			} else {
+				break
+			}
+		}
+		update := bson.M{
+			"$set": bson.M{
+				"dialog": task.Dialog,
+			},
+		}
+		if isUpdate {
+			if _, err := svc.CollectionLabeledTask5.UpdateByID(ctx, task.ID, update); err != nil {
+				log.Logger().WithContext(ctx).Error("update task: ", err.Error())
+				return 0, err
+			}
+			updateCount = updateCount + 1
+		}
+	}
+
+	return updateCount, nil
+}
