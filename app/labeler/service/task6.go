@@ -148,7 +148,6 @@ func (svc *LabelerService) tasksToSearchTask6Resp(ctx context.Context, tasks []m
 			Status:     task.Status,
 			Labeler:    labeler,
 			UpdateTime: task.UpdateTime,
-			Rpg:        task.Rpg,
 		}
 
 	}
