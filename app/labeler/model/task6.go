@@ -1,7 +1,6 @@
 package model
 
 import (
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go-admin/common/util"
@@ -15,6 +14,6 @@ type Task6 struct {
 	Status      string             `bson:"status" json:"status"`
 	Permissions Permissions        `bson:"permissions" json:"permissions"`
 	UpdateTime  util.Datetime      `bson:"updateTime" json:"updateTime"`
-	Rpg         bson.M             `bson:"rpg" json:"rpg"`
+	Rpg         util.GzipJSON      `bson:"rpg" json:"rpg"`
 	Version     int                `bson:"version" json:"version"`
 }

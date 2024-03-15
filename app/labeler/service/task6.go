@@ -84,7 +84,6 @@ type SearchTask6Resp struct {
 	Labeler    string             `json:"labeler"`
 	Checker    string             `json:"checker"`
 	UpdateTime util.Datetime      `json:"updateTime"`
-	Rpg        bson.M             `json:"rpg"`
 }
 
 func (svc *LabelerService) SearchTask6(ctx context.Context, req SearchTask6Req) ([]SearchTask6Resp, int, error) {
@@ -279,7 +278,7 @@ type UpdateTask6Req struct {
 	UserID        string             `json:"-"`
 	UserDataScope string             `json:"-"`
 	ID            primitive.ObjectID `json:"id"`
-	Rpg           bson.M             `json:"rpg"`
+	Rpg           util.GzipJSON      `json:"rpg"`
 	Version       int                `json:"version"`
 }
 

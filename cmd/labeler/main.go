@@ -91,6 +91,7 @@ func run() error {
 		bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(rb)
 		timeCodec := util.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
 		rb.RegisterCodec(reflect.TypeOf(util.Datetime{}), timeCodec)
+		rb.RegisterCodec(util.GzipJSONType, &util.JSONCodec{})
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.DSN).SetMonitor(otelmongo.NewMonitor()).SetRegistry(rb.Build()))
 		if err != nil {
 			panic(err)
