@@ -256,18 +256,19 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 			}
 		} else {
 			res[i] = SearchTask5Resp{
-				ID:           task.ID,
-				ProjectID:    task.ProjectID,
-				Name:         task.Name,
-				Status:       task.Status,
-				Labeler:      labeler,
-				UpdateTime:   task.UpdateTime,
-				Dialog:       task.Dialog,
-				WordCount:    task.WordCount,
-				EditQuantity: task.EditQuantity,
-				WorkQuantity: task.WorkQuantity,
-				Remark:       false,
-				RemarkLen:    task.RemarkLen,
+				ID:            task.ID,
+				ProjectID:     task.ProjectID,
+				Name:          task.Name,
+				Status:        task.Status,
+				Labeler:       labeler,
+				UpdateTime:    task.UpdateTime,
+				Dialog:        task.Dialog,
+				WordCount:     task.WordCount,
+				EditQuantity:  task.EditQuantity,
+				WorkQuantity:  task.WorkQuantity,
+				Remark:        false,
+				RemarkLen:     task.RemarkLen,
+				SubmittedTime: task.SubmittedTime,
 			}
 		}
 	}
