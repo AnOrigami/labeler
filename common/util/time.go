@@ -34,11 +34,12 @@ func (d *Datetime) SqlNullTime() sql.NullTime {
 	}
 }
 
-func (d *Datetime) MarshalJSON() ([]byte, error) {
-	if d == nil {
+func (d Datetime) MarshalJSON() ([]byte, error) {
+	t := time.Time(d)
+	if t.IsZero() {
 		return []byte("null"), nil
 	}
-	s := (time.Time)(*d).Format(TimeLayoutDatetime)
+	s := t.Format(TimeLayoutDatetime)
 	return append([]byte(`"`), append([]byte(s), '"')...), nil
 }
 

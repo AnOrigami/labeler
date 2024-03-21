@@ -175,7 +175,7 @@ type SearchTask5Resp struct {
 	Labeler       string              `json:"labeler"`
 	Checker       string              `json:"checker"`
 	UpdateTime    util.Datetime       `json:"updateTime"`
-	SubmittedTime util.Datetime       `json:"submittedTime"`
+	SubmittedTime util.Datetime       `bson:"submittedTime" json:"submittedTime"`
 	Remark        bool                `json:"remark"`
 	RemarkLen     int                 `bson:"remarkLen" json:"remarkLen"`
 	WordCount     int                 `bson:"wordCount" json:"wordCount"`
