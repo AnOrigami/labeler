@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"math"
 	"reflect"
 	"sort"
 	"strconv"
@@ -168,20 +169,22 @@ func (svc *LabelerService) UploadTask5(ctx context.Context, req UploadTask5Req) 
 type SearchTask5Req = SearchTaskReq
 
 type SearchTask5Resp struct {
-	ID            primitive.ObjectID  `json:"id"`
-	ProjectID     primitive.ObjectID  `json:"projectId"`
-	Name          string              `json:"name"`
-	Status        string              `json:"status"`
-	Labeler       string              `json:"labeler"`
-	Checker       string              `json:"checker"`
-	UpdateTime    util.Datetime       `json:"updateTime"`
-	SubmittedTime util.Datetime       `bson:"submittedTime" json:"submittedTime"`
-	Remark        bool                `json:"remark"`
-	RemarkLen     int                 `bson:"remarkLen" json:"remarkLen"`
-	WordCount     int                 `bson:"wordCount" json:"wordCount"`
-	EditQuantity  int                 `bson:"editQuantity" json:"editQuantity"`
-	WorkQuantity  int                 `bson:"workQuantity" json:"workQuantity"`
-	Dialog        []model.ContentText `json:"dialog"`
+	ID             primitive.ObjectID  `json:"id"`
+	ProjectID      primitive.ObjectID  `json:"projectId"`
+	Name           string              `json:"name"`
+	Status         string              `json:"status"`
+	Labeler        string              `json:"labeler"`
+	Checker        string              `json:"checker"`
+	UpdateTime     util.Datetime       `json:"updateTime"`
+	SubmittedTime  util.Datetime       `bson:"submittedTime" json:"submittedTime"`
+	ApprovedTime   util.Datetime       `bson:"approvedTime" json:"approvedTime"`
+	UnsanctionTime util.Datetime       `bson:"unsanctionTime" json:"unsanctionTime"`
+	Remark         bool                `json:"remark"`
+	RemarkLen      int                 `bson:"remarkLen" json:"remarkLen"`
+	WordCount      int                 `bson:"wordCount" json:"wordCount"`
+	EditQuantity   int                 `bson:"editQuantity" json:"editQuantity"`
+	WorkQuantity   int                 `bson:"workQuantity" json:"workQuantity"`
+	Dialog         []model.ContentText `json:"dialog"`
 }
 
 func (svc *LabelerService) SearchTask5(ctx context.Context, req SearchTask5Req) ([]SearchTask5Resp, int, error) {
@@ -240,35 +243,39 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 		}
 		if task.Remark != "" {
 			res[i] = SearchTask5Resp{
-				ID:            task.ID,
-				ProjectID:     task.ProjectID,
-				Name:          task.Name,
-				Status:        task.Status,
-				Labeler:       labeler,
-				UpdateTime:    task.UpdateTime,
-				Dialog:        task.Dialog,
-				WordCount:     task.WordCount,
-				EditQuantity:  task.EditQuantity,
-				WorkQuantity:  task.WorkQuantity,
-				Remark:        true,
-				RemarkLen:     task.RemarkLen,
-				SubmittedTime: task.SubmittedTime,
+				ID:             task.ID,
+				ProjectID:      task.ProjectID,
+				Name:           task.Name,
+				Status:         task.Status,
+				Labeler:        labeler,
+				UpdateTime:     task.UpdateTime,
+				Dialog:         task.Dialog,
+				WordCount:      task.WordCount,
+				EditQuantity:   task.EditQuantity,
+				WorkQuantity:   task.WorkQuantity,
+				Remark:         true,
+				RemarkLen:      task.RemarkLen,
+				SubmittedTime:  task.SubmittedTime,
+				ApprovedTime:   task.ApprovedTime,
+				UnsanctionTime: task.UnsanctionTime,
 			}
 		} else {
 			res[i] = SearchTask5Resp{
-				ID:            task.ID,
-				ProjectID:     task.ProjectID,
-				Name:          task.Name,
-				Status:        task.Status,
-				Labeler:       labeler,
-				UpdateTime:    task.UpdateTime,
-				Dialog:        task.Dialog,
-				WordCount:     task.WordCount,
-				EditQuantity:  task.EditQuantity,
-				WorkQuantity:  task.WorkQuantity,
-				Remark:        false,
-				RemarkLen:     task.RemarkLen,
-				SubmittedTime: task.SubmittedTime,
+				ID:             task.ID,
+				ProjectID:      task.ProjectID,
+				Name:           task.Name,
+				Status:         task.Status,
+				Labeler:        labeler,
+				UpdateTime:     task.UpdateTime,
+				Dialog:         task.Dialog,
+				WordCount:      task.WordCount,
+				EditQuantity:   task.EditQuantity,
+				WorkQuantity:   task.WorkQuantity,
+				Remark:         false,
+				RemarkLen:      task.RemarkLen,
+				SubmittedTime:  task.SubmittedTime,
+				ApprovedTime:   task.ApprovedTime,
+				UnsanctionTime: task.UnsanctionTime,
 			}
 		}
 	}
@@ -299,7 +306,6 @@ func (svc *LabelerService) AllocOneTask5(ctx context.Context, req AllocOneTaskRe
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return model.Task5{}, err
 	}
-
 	//不存在待标注任务，err==mongo.ErrNoDocuments
 	//查询所有存活
 	var project5List []model.Project5
@@ -608,29 +614,33 @@ func (svc *LabelerService) BatchSetTask5Status(ctx context.Context, req BatchSet
 		}
 	}
 	normalStatusMap := map[string][]string{
-		//model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
-		//model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
-		//model.TaskStatusChecking: {model.TaskStatusSubmit, model.TaskStatusFailed},
-		model.TaskStatusSubmit: {model.TaskStatusLabeling, model.TaskStatusSubmit /*, model.TaskStatusFailed*/},
+		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusChecking: {model.TaskStatusSubmit, model.TaskStatusFailed},
+		model.TaskStatusSubmit:   {model.TaskStatusLabeling, model.TaskStatusSubmit},
 	}
 	specialStatusMap := map[string][]string{
-		//model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
-		//model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusSubmit},
-		//model.TaskStatusChecking: {model.TaskStatusFailed},
-		model.TaskStatusSubmit: {model.TaskStatusLabeling, model.TaskStatusAllocate, model.TaskStatusSubmit /*, model.TaskStatusFailed*/},
+		model.TaskStatusFailed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusPassed:   {model.TaskStatusChecking, model.TaskStatusPassed, model.TaskStatusFailed},
+		model.TaskStatusChecking: {},
+		model.TaskStatusSubmit:   {},
 	}
 
-	//任务状态为{未分配}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
-	//
-	//任务状态为{待标注}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
-	//
-	//任务状态为{审核不通过}，管理员点击进入之后为标注页面，点击提交之后任务状态变更为待审核
-	//
-	//任务状态为{已提交}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
-	//
+	//任务状态为{待标注}，管理员点击进入之后为标注页面
+	//任务状态为{已提交}，管理员点击进入之后为标注页面
+
 	//任务状态为{待审核}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
-	//
 	//任务状态为{已审核}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	//任务状态为{审核不通过}，管理员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//任务状态为{待标注}，标注员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
+	//任务状态为{已提交}，标注员点击进入之后为标注页面，点击提交之后任务状态变更为已提交
+
+	//任务状态为{待审核}，审核员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	//任务状态为{已审核}，审核员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	//任务状态为{审核不通过}，审核员点击进入之后为审核页面，点击审核通过之后任务状态变更为已审核，点击审核不通过之后任务状态变更为审核不通过
+	//                    标注员点击进入之后为标注页面，点击提交之后任务状态变更为待审核
+
 	update := bson.M{}
 	if req.Status == model.TaskStatusSubmit {
 		update = bson.M{
@@ -638,6 +648,22 @@ func (svc *LabelerService) BatchSetTask5Status(ctx context.Context, req BatchSet
 				"status":        req.Status,
 				"updateTime":    util.Datetime(time.Now()),
 				"submittedTime": util.Datetime(time.Now()),
+			},
+		}
+	} else if req.Status == model.TaskStatusFailed {
+		update = bson.M{
+			"$set": bson.M{
+				"status":         req.Status,
+				"updateTime":     util.Datetime(time.Now()),
+				"unsanctionTime": util.Datetime(time.Now()),
+			},
+		}
+	} else if req.Status == model.TaskStatusPassed {
+		update = bson.M{
+			"$set": bson.M{
+				"status":       req.Status,
+				"updateTime":   util.Datetime(time.Now()),
+				"approvedTime": util.Datetime(time.Now()),
 			},
 		}
 	} else {
@@ -2001,4 +2027,95 @@ func (svc *LabelerService) SearchTask5Count(ctx context.Context, req Req) (int, 
 	}
 
 	return updateCount, nil
+}
+
+type Task5BatchAllocCheckerReq struct {
+	ProjectID primitive.ObjectID `json:"projectId"`
+	Persons   []string           `json:"persons"`
+	Number    int64              `json:"number"`
+}
+
+type Task5BatchAllocCheckerResp struct {
+	Count int64 `json:"count"`
+}
+
+func (svc *LabelerService) Task5BatchAllocChecker(ctx context.Context, req Task5BatchAllocCheckerReq) error {
+	if req.Number <= 0 {
+		return errors.New("分配任务数量不合法")
+	}
+	if len(req.Persons) == 0 {
+		return errors.New("分配人员数量不能为0")
+	}
+	filter := bson.M{
+		"projectId": req.ProjectID,
+		"status":    model.TaskStatusSubmit,
+	}
+	maxCount := int(req.Number) / len(req.Persons)
+	if maxCount < 1 {
+		maxCount = 1
+	}
+	personMap := make(map[string]int, len(req.Persons))
+	for _, id := range req.Persons {
+		personMap[id] = 0
+	}
+
+	result, err := svc.CollectionLabeledTask5.Find(ctx, filter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return err
+	}
+	var tasks []model.Task5
+	if err = result.All(ctx, &tasks); err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return err
+	}
+	if len(tasks) == 0 {
+		return errors.New("当前无可分配任务")
+	}
+	nowTime := util.Datetime(time.Now())
+	var totalCount int
+	for _, task := range tasks {
+		var minCount = math.MaxInt
+		var minID string
+		for i, v := range personMap {
+			if task.Permissions.Labeler != nil {
+				if i == task.Permissions.Labeler.ID {
+					continue
+				}
+			}
+			if v == maxCount {
+				continue
+			}
+			if v < minCount {
+				minCount = v
+				minID = i
+			}
+		}
+		if minID == "" {
+			continue
+		}
+		personMap[minID]++
+		ft := bson.M{
+			"_id": task.ID,
+		}
+		update := bson.M{
+			"$set": bson.M{
+				"permissions.checker": model.Person{ID: minID},
+				"status":              model.TaskStatusChecking,
+				"updateTime":          nowTime,
+			},
+		}
+		if _, err := svc.CollectionLabeledTask5.UpdateOne(ctx, ft, update); err != nil {
+			log.Logger().WithContext(ctx).Error(err.Error())
+			return err
+		}
+		totalCount++
+		if totalCount == int(req.Number) {
+			break
+		}
+	}
+	if totalCount == 0 {
+		return errors.New("分配失败：标注员和审核员不能是同一人")
+	}
+	return nil
 }

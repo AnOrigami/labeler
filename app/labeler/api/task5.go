@@ -40,6 +40,8 @@ func task5AuthRouter() RouterCheckRole {
 		g.POST("/api/v1/labeler/t5/downloadscore", api.DownloadScore())
 		g.POST("/api/v1/labeler/t5/downloadworkload", api.DownloadWorkload())
 		g.POST("/api/v1/labeler/t5/proportionalScoring", api.ProportionalScoring())
+		g.POST("/api/v1/labeler/t5/taskcount", api.SearchTask5Count())
+		g.POST("/api/v1/labeler/t5/alloc/checker", api.Task5BatchAllocChecker())
 	}
 }
 
@@ -434,5 +436,46 @@ func (api *LabelerAPI) ProportionalScoring() GinHandler {
 			return
 		}
 		response.OK(c, resp, "成功")
+	}
+}
+
+func (api *LabelerAPI) SearchTask5Count() GinHandler {
+	return func(c *gin.Context) {
+		var req service.Req
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 400, err, "参数异常")
+			return
+		}
+
+		resp, err := api.LabelerService.SearchTask5Count(c, req)
+		if err != nil {
+			response.Error(c, 500, err, "")
+			return
+		}
+
+		response.OK(c, resp, "查询成功")
+	}
+}
+
+func (api *LabelerAPI) Task5BatchAllocChecker() GinHandler {
+	return func(c *gin.Context) {
+		var req service.Task5BatchAllocCheckerReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "参数异常")
+			return
+		}
+		if req.ProjectID.IsZero() {
+			response.Error(c, 400, nil, "项目id不能为空")
+			return
+		}
+		err := api.LabelerService.Task5BatchAllocChecker(c.Request.Context(), req)
+		if err != nil {
+			log.Logger().WithContext(c.Request.Context()).Error(err.Error())
+			response.Error(c, 500, err, "")
+			return
+		}
+		response.OK(c, nil, "分配成功")
 	}
 }

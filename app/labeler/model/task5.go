@@ -7,24 +7,26 @@ import (
 )
 
 type Task5 struct {
-	ID            primitive.ObjectID `bson:"_id" json:"id"`
-	Name          string             `bson:"name" json:"name"`
-	FullName      string             `bson:"fullName" json:"fullName"`
-	ProjectID     primitive.ObjectID `bson:"projectId" json:"projectId"`
-	Status        string             `bson:"status" json:"status"`
-	Permissions   Permissions        `bson:"permissions" json:"permissions"`
-	UpdateTime    util.Datetime      `bson:"updateTime" json:"updateTime"`
-	SubmittedTime util.Datetime      `bson:"submittedTime" json:"submittedTime"`
-	Dialog        []ContentText      `bson:"dialog" json:"dialog"`
-	Remark        string             `bson:"remark" json:"remark"`
-	RemarkLen     int                `bson:"remarkLen" json:"remarkLen"`
-	RemarkOptions int                `bson:"remarkOptions" json:"remarkOptions"`
-	WordCount     int                `bson:"wordCount" json:"wordCount"`       //阅读量
-	EditQuantity  int                `bson:"editQuantity" json:"editQuantity"` //修改量
-	WorkQuantity  int                `bson:"workQuantity" json:"workQuantity"` //工作量
-	Score         Scores             `bson:"score" json:"score"`
-	HasScore      bool               `bson:"hasScore" json:"hasScore"`
-	RequireScore  int                `bson:"requireScore" json:"requireScore"`
+	ID             primitive.ObjectID `bson:"_id" json:"id"`
+	Name           string             `bson:"name" json:"name"`
+	FullName       string             `bson:"fullName" json:"fullName"`
+	ProjectID      primitive.ObjectID `bson:"projectId" json:"projectId"`
+	Status         string             `bson:"status" json:"status"`
+	Permissions    Permissions        `bson:"permissions" json:"permissions"`
+	UpdateTime     util.Datetime      `bson:"updateTime" json:"updateTime"`
+	SubmittedTime  util.Datetime      `bson:"submittedTime" json:"submittedTime"`
+	ApprovedTime   util.Datetime      `bson:"approvedTime" json:"approvedTime"`
+	UnsanctionTime util.Datetime      `bson:"unsanctionTime" json:"unsanctionTime"`
+	Dialog         []ContentText      `bson:"dialog" json:"dialog"`
+	Remark         string             `bson:"remark" json:"remark"`
+	RemarkLen      int                `bson:"remarkLen" json:"remarkLen"`
+	RemarkOptions  int                `bson:"remarkOptions" json:"remarkOptions"`
+	WordCount      int                `bson:"wordCount" json:"wordCount"`       //阅读量
+	EditQuantity   int                `bson:"editQuantity" json:"editQuantity"` //修改量
+	WorkQuantity   int                `bson:"workQuantity" json:"workQuantity"` //工作量
+	Score          Scores             `bson:"score" json:"score"`
+	HasScore       bool               `bson:"hasScore" json:"hasScore"`
+	RequireScore   int                `bson:"requireScore" json:"requireScore"`
 }
 
 type Scores struct {
