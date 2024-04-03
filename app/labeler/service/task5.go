@@ -221,6 +221,9 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 		if task.Permissions.Labeler != nil {
 			ids = append(ids, task.Permissions.Labeler.ID)
 		}
+		if task.Permissions.Checker != nil {
+			ids = append(ids, task.Permissions.Checker.ID)
+		}
 	}
 
 	res := make([]SearchTask5Resp, len(tasks))
@@ -237,9 +240,12 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 		userMap[strconv.Itoa(v.UserId)] = v.NickName
 	}
 	for i, task := range tasks {
-		var labeler string
+		var labeler, checker string
 		if task.Permissions.Labeler != nil {
 			labeler = userMap[task.Permissions.Labeler.ID]
+		}
+		if task.Permissions.Checker != nil {
+			checker = userMap[task.Permissions.Checker.ID]
 		}
 		if task.Remark != "" {
 			res[i] = SearchTask5Resp{
@@ -248,6 +254,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				Name:           task.Name,
 				Status:         task.Status,
 				Labeler:        labeler,
+				Checker:        checker,
 				UpdateTime:     task.UpdateTime,
 				Dialog:         task.Dialog,
 				WordCount:      task.WordCount,
@@ -266,6 +273,7 @@ func (svc *LabelerService) tasksToSearchTask5Resp(ctx context.Context, tasks []m
 				Name:           task.Name,
 				Status:         task.Status,
 				Labeler:        labeler,
+				Checker:        checker,
 				UpdateTime:     task.UpdateTime,
 				Dialog:         task.Dialog,
 				WordCount:      task.WordCount,
@@ -955,6 +963,7 @@ func (svc *LabelerService) GetTask5(ctx context.Context, req GetTask5Req, p *act
 		}
 	}
 	if req.WorkType == 0 {
+
 		filter = buildTask5DetailFilter(req)
 		filter["projectId"] = task.ProjectID
 	}
