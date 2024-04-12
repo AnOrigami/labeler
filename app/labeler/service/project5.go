@@ -106,7 +106,7 @@ func (svc *LabelerService) Project5Count(ctx context.Context, req Project5CountR
 			},
 		},
 	}
-	cursor, err := svc.CollectionTask5.Aggregate(ctx, pipe)
+	cursor, err := svc.CollectionLabeledTask5.Aggregate(ctx, pipe)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return Project5CountResp{}, err
@@ -138,8 +138,17 @@ func (svc *LabelerService) Project5Count(ctx context.Context, req Project5CountR
 		case model.TaskStatusFailed:
 			resp.Failed = count
 		}
-		resp.Total += count
 	}
+	totalFilter := bson.M{
+		"projectId": req.ID,
+		"status":    "未分配",
+	}
+	count, err := svc.CollectionTask5.CountDocuments(ctx, totalFilter)
+	if err != nil {
+		log.Logger().WithContext(ctx).Error(err.Error())
+		return Project5CountResp{}, err
+	}
+	resp.Total = count
 	allocatedLabelFilter := bson.M{
 		"projectId": req.ID,
 		"status": bson.M{
@@ -158,14 +167,14 @@ func (svc *LabelerService) Project5Count(ctx context.Context, req Project5CountR
 			"$exists": true,
 		},
 	}
-	count, err := svc.CollectionTask5.CountDocuments(ctx, allocatedLabelFilter)
+	count, err = svc.CollectionLabeledTask5.CountDocuments(ctx, allocatedLabelFilter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return Project5CountResp{}, err
 	}
 	resp.AllocatedLabel = resp.Labeling + count
 
-	count, err = svc.CollectionTask5.CountDocuments(ctx, allocatedCheckFilter)
+	count, err = svc.CollectionLabeledTask5.CountDocuments(ctx, allocatedCheckFilter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return Project5CountResp{}, err
