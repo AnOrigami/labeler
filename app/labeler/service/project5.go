@@ -149,38 +149,33 @@ func (svc *LabelerService) Project5Count(ctx context.Context, req Project5CountR
 		return Project5CountResp{}, err
 	}
 	resp.Total = count
+
 	allocatedLabelFilter := bson.M{
 		"projectId": req.ID,
-		"status": bson.M{
-			"$in": []string{"已提交", "待审核", "已审核", "审核不通过"},
-		},
-		"permissions.labeler": bson.M{
-			"$exists": true,
-		},
+		"status":    "未分配",
 	}
-	allocatedCheckFilter := bson.M{
-		"projectId": req.ID,
-		"status": bson.M{
-			"$in": []string{"已审核", "审核不通过"},
-		},
-		"permissions.checker": bson.M{
-			"$exists": true,
-		},
-	}
-	count, err = svc.CollectionLabeledTask5.CountDocuments(ctx, allocatedLabelFilter)
+
+	cursor, err = svc.CollectionTask5.Find(ctx, allocatedLabelFilter)
 	if err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return Project5CountResp{}, err
 	}
-	resp.AllocatedLabel = resp.Labeling + count
-
-	count, err = svc.CollectionLabeledTask5.CountDocuments(ctx, allocatedCheckFilter)
-	if err != nil {
+	var tasks []*model.Task5
+	if err := cursor.All(ctx, &tasks); err != nil {
 		log.Logger().WithContext(ctx).Error(err.Error())
 		return Project5CountResp{}, err
 	}
-	resp.AllocatedCheck = resp.Checking + count
 
-	resp.UnallocatedCheck = resp.Submit
+	var allocatedLabel, unAllocatedLabel int
+	for _, task := range tasks {
+		if task.Dialog[0].Priority == 0 {
+			unAllocatedLabel++
+		} else {
+			allocatedLabel += task.Dialog[0].Priority
+		}
+	}
+	resp.AllocatedLabel = int64(allocatedLabel)
+	resp.UnallocatedCheck = int64(unAllocatedLabel)
+
 	return resp, nil
 }
